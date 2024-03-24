@@ -1,0 +1,4 @@
+SECURE_KEY : "xB1d94UEcBuWjdxLl7Gx"
+HOST : "158.247.236.249"
+#HOST : "localhost"
+PORT : 4989
