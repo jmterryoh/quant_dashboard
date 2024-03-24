@@ -35,7 +35,7 @@ def display_search_results():
             if "result" in respose["return"]:
                 if respose["return"]["result"] == "success":
                     searched_dates_df = pd.DataFrame(respose["return"]["data"])
-                    print(searched_dates_df)
+                    #print(searched_dates_df)
                     searched_dates_df['dates'] = searched_dates_df['idt'] + "-" + searched_dates_df['seq'].astype(str)
                     searched_dates = searched_dates_df['dates'].tolist()
                     selected_searched_date = st.selectbox(label="목록", options=searched_dates, key="cb_dates", label_visibility='collapsed')

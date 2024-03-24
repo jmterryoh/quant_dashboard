@@ -3,6 +3,8 @@ from util import session as ss
 
 def authenticated_menu():
     # Show a navigation menu for authenticated users
+    st.sidebar.page_link("pages/page_dashboard_interest.py", label="관심목록")
+    st.sidebar.divider()
     st.sidebar.page_link("pages/page_list_searched.py", label="조건검색")
     st.sidebar.page_link("pages/page_chart_analysis_basic.py", label="차트분석")
     st.sidebar.divider()
