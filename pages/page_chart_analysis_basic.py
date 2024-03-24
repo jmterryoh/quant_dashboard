@@ -275,7 +275,7 @@ def main():
             col61, col62 = st.columns(2)
             with col61:
                 if st.button(key="save", label="지표저장"):
-                    if stock:
+                    if stock.any():
                         uidx, market, code = 1, stock[0][0], stock[0][1]
                         json_indicators = json.dumps(indicators_params)
 
