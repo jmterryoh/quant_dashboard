@@ -17,7 +17,7 @@ def create_column_subtitle(title):
     return f'<p style="color:white;font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
 
 
-@st.cache_data
+#@st.cache_data
 def get_stocklist_interest():
     df = {}
 
@@ -37,7 +37,7 @@ def get_stocklist_interest():
 
     return df    
 
-@st.cache_data
+#@st.cache_data
 def get_stock_indicators(uidx, market, code):
 
     df = {}
