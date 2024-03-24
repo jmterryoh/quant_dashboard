@@ -166,6 +166,7 @@ def main():
     stock_code = "005930.KS"
     stock_name = "삼성전자"
     stocknames = None
+    stock = None
 
     global emaA, emaB, emaC, emaD
     global vwap1_cb, vwap1_dt, vwap1_mt1, vwap1_mt2
@@ -279,7 +280,7 @@ def main():
                         json_indicators = json.dumps(indicators_params)
 
                         task_name = "insert_technical_indicator"
-                        params = {'uidx': 1,
+                        params = {'uidx': uidx,
                                 'market': f"{market}",
                                 'code': f"{code}",
                                 'name': f"{selected_stockname}",
