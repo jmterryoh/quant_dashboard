@@ -40,7 +40,6 @@ def show_min_sidebar():
             width: 140px !important; # Set the width to your desired value
             display: none;
         }
-        .main {margin-left:-60px;}
         .st-emotion-cache-z5fcl4 {padding-top:3rem!important;}                                      
     </style>
     """, unsafe_allow_html=True)
