@@ -8,16 +8,22 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
 # filepath : db_middleware.yaml
-#current_path = os.path.abspath(__file__)
-#FILEPATH_DB_MIDDLEWARE = os.path.join(os.path.dirname(current_path), 'db_middleware.yaml')
+current_path = os.path.abspath(__file__)
+FILEPATH_DB_MIDDLEWARE = os.path.join(os.path.dirname(current_path), 'db_middleware.yaml')
 
-#SECURE_KEY, HOST, PORT = None, None, None
-#with open(FILEPATH_DB_MIDDLEWARE, encoding='UTF-8') as f:
-#    _cfg = yaml.load(f, Loader=yaml.FullLoader)
-#    SECURE_KEY = _cfg['SECURE_KEY']
-#    SECURE_KEY = SECURE_KEY.encode('UTF-8')
-#    HOST = _cfg['HOST']
-#    PORT = _cfg['PORT']
+SECURE_KEY, HOST, PORT = None, None, None
+if os.path.exists(FILEPATH_DB_MIDDLEWARE):
+    with open(FILEPATH_DB_MIDDLEWARE, encoding='UTF-8') as f:
+        _cfg = yaml.load(f, Loader=yaml.FullLoader)
+        SECURE_KEY = _cfg['SECURE_KEY']
+        SECURE_KEY = SECURE_KEY.encode('UTF-8')
+        HOST = _cfg['HOST']
+        PORT = _cfg['PORT']
+else:
+    SECURE_KEY = st.secrets["SECURE_KEY"]
+    SECURE_KEY = SECURE_KEY.encode('UTF-8')
+    HOST = st.secrets["HOST"]
+    PORT = st.secrets["PORT"]
 
 def encrypt_message(message, key):
     nonce = os.urandom(16)  # 16바이트(128비트)의 무작위 nonce 생성
