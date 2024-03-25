@@ -140,6 +140,9 @@ def get_stock_chart(symbol
         
     # NaN 삭제
     dataframe.dropna(inplace=True)
+    # open, high, low 값이 0이고 close 값이 0보다 클 경우, open, high, low 값을 close 값으로 세팅
+    condition = (dataframe['Open'] <= 1) & (dataframe['High']<= 1) & (dataframe['Low'] <= 1) & (dataframe['Close'] > 0)
+    dataframe.loc[condition, ['Open', 'High', 'Low']] = dataframe.loc[condition, 'Close']
 
     # 캔들
     df = dataframe.reset_index()
