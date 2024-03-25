@@ -14,7 +14,7 @@ from datetime import datetime
 
 
 def create_column_subtitle(title):
-    return f'<p style="color:white;font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
+    return f'<p style="color:gray;font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
 
 
 #@st.cache_data
