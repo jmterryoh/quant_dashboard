@@ -65,7 +65,6 @@ streamlit-aggrid
 streamlit-js-eval
 streamlit-lightweight-charts
 streamlit-lightweight-charts-ntf
-streamlit-javascript
 tenacity
 toml
 toolz
@@ -82,5 +81,3 @@ webencodings
 websockets
 yfinance
 zipp
-ua-parser
-user-agents
