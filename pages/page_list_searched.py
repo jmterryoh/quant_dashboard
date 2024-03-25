@@ -14,8 +14,6 @@ from util import screen as scr
 
 global grid1, grid2
 
-def create_column_subtitle(title):
-    return f'<p style="color:white;font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
 
 def display_search_results():
 
@@ -25,7 +23,7 @@ def display_search_results():
     idt, seq = None, None
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        col_subtitle1 = create_column_subtitle('조건검색종목')
+        col_subtitle1 = scr.create_column_subtitle('조건검색종목')
         st.markdown(col_subtitle1, unsafe_allow_html=True)
     with col2:
         task_name = "get_stocklist_searched_dates"
@@ -174,7 +172,7 @@ def display_interest_list():
 
     # 관심종목
     # Add subtitle
-    col_subtitle2 = create_column_subtitle('관심종목')
+    col_subtitle2 = scr.create_column_subtitle('관심종목')
     st.markdown(col_subtitle2, unsafe_allow_html=True)
 
     df2 = {}
@@ -220,7 +218,7 @@ def display_stock_charts(stock_name, stock_code, indicators_params, cycle, perio
     col1, col2 = st.columns(2)
     with col1:
         # Add subtitle
-        chart_subtitle = create_column_subtitle(f"{cycle}-{stock_name}")
+        chart_subtitle = scr.create_column_subtitle(f"{cycle}-{stock_name}")
         st.markdown(chart_subtitle, unsafe_allow_html=True)
     with col2:
         # Add a checkbox for toggling volume display

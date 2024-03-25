@@ -11,10 +11,7 @@ from hts import YF_api as yf
 from db import db_client as dc
 import json
 from datetime import datetime
-
-
-def create_column_subtitle(title):
-    return f'<p style="color:gray;font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
+import asyncio
 
 
 #@st.cache_data
@@ -79,7 +76,7 @@ def get_stock_indicators(uidx, market, code):
 
     return df
 
-def display_stock_charts(market, name, code, indicators_params, cycle, period, interval, height=350):
+def display_stock_charts(market, name, code, indicators_params, cycle, period, interval, time_minspacing, height=350):
 
     df = {}
     stock_code = code + "." + market
@@ -90,18 +87,13 @@ def display_stock_charts(market, name, code, indicators_params, cycle, period, i
                                              dataframe=df,
                                              indicators_params=indicators_params,
                                              pane_name=f"pane_{code}_{period.lower()}",
-                                             time_minspacing=3,
+                                             time_minspacing=time_minspacing,
                                              show_volume=False,
                                              chart_height=height)
     else:
         st.write("No data available")
 
-
-def main():
-    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-    ss.check_session('pages/page_dashboard_interest.py')
-    sb.menu_with_redirect()
-    sc.show_min_sidebar()
+def display_page():
 
     df = {}
     df = get_stocklist_interest()    
@@ -118,7 +110,7 @@ def main():
         udt = row['udt']
 
         # Add subtitle
-        col_subtitle = create_column_subtitle(name)
+        col_subtitle = sc.create_column_subtitle(name)
         st.markdown(col_subtitle, unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
@@ -126,14 +118,41 @@ def main():
         with col1:
             indicators_params_dy = {}
             indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", height=350)
+            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", time_minspacing=15, height=350)
 
         with col2:
-            indicators_params_wk = {}
+            #indicators_params_wk = {}
+            #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
+            #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
+            indicators_params_dy = {}
             indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
+            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
 
 
-if __name__ == '__main__':
-    main()
+button_refresh = None
+async def update_screen():
+    while True:
+        if button_refresh:
+            display_page()
+        await asyncio.sleep(30)
+        st.rerun()
 
+
+if __name__ == "__main__":
+    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+    ss.check_session('pages/page_dashboard_interest.py')
+    sb.menu_with_redirect()
+    sc.show_min_sidebar()
+
+    button_refresh = st.toggle(label="정보갱신 30초", key="button_refresh", value=True)
+
+    try:
+        # async run the draw function, sending in all the
+        # widgets it needs to use/populate
+        asyncio.run(update_screen())
+    except Exception as e:
+        print(f'error...{type(e)}')
+        raise
+    finally:    
+        # some additional code to handle user clicking stop
+        print('finally')
