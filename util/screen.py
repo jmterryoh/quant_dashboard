@@ -47,3 +47,5 @@ def show_min_sidebar():
 def refresh_page():
     streamlit_js_eval(js_expressions="parent.window.location.reload()")
     
+def create_column_subtitle(title):
+    return f'<p style="font-size: 18px;font-weight:bold;padding-left:6px;margin-bottom:2px;">{title}</p>'
