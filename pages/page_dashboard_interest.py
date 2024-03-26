@@ -121,14 +121,13 @@ def display_page():
             display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", time_minspacing=15, height=350)
 
         with col2:
-            if 'screen_width' in st.session_state:
-                if st.session_state['screen_width'] >= 800:
-                    #indicators_params_wk = {}
-                    #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-                    #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
-                    indicators_params_dy = {}
-                    indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-                    display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
+            if sc.get_screen_width() >= 800:
+                #indicators_params_wk = {}
+                #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
+                #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
+                indicators_params_dy = {}
+                indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
+                display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
 
 
 button_refresh = None
@@ -147,8 +146,6 @@ if __name__ == "__main__":
     ss.check_session('pages/page_dashboard_interest.py')
     sb.menu_with_redirect()
     sc.show_min_sidebar()
-
-    st.session_state['screen_width'] = sc.get_screen_width()
 
     button_refresh = st.toggle(label="정보갱신 30초", key="button_refresh", value=True)
 
