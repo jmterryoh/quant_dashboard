@@ -149,6 +149,7 @@ if __name__ == "__main__":
     sc.show_min_sidebar()
 
     st.session_state['screen_width'] = sc.get_screen_width()
+    st.warning(st.session_state['screen_width'])
 
     button_refresh = st.toggle(label="정보갱신 30초", key="button_refresh", value=True)
 
