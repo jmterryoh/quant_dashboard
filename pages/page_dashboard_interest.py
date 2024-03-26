@@ -118,7 +118,7 @@ def display_page():
         with col1:
             indicators_params_dy = {}
             indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=15, height=350)
+            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉_확대", period="3y", interval="1d", time_minspacing=15, height=350)
 
         with col2:
             if 'screen_width' in st.session_state:
@@ -128,7 +128,7 @@ def display_page():
                     #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
                     indicators_params_dy = {}
                     indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-                    display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
+                    display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉_와이드", period="3y", interval="1d", time_minspacing=3, height=350)
 
 
 button_refresh = None
