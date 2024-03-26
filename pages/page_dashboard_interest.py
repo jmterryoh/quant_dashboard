@@ -122,7 +122,8 @@ def display_page():
 
         with col2:
             if 'screen_width' in st.session_state:
-                if st.session_state['screen_width'] >= 800:
+                width = st.session_state['screen_width']
+                if width >= 800:
                     #indicators_params_wk = {}
                     #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
                     #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
@@ -149,7 +150,6 @@ if __name__ == "__main__":
     sc.show_min_sidebar()
 
     st.session_state['screen_width'] = sc.get_screen_width()
-    st.warning(st.session_state['screen_width'])
 
     button_refresh = st.toggle(label="정보갱신 30초", key="button_refresh", value=True)
 
