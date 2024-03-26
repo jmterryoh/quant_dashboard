@@ -86,7 +86,7 @@ def display_stock_charts(market, name, code, indicators_params, cycle, period, i
         click_events = chart.get_stock_chart(symbol=stock_code,
                                              dataframe=df,
                                              indicators_params=indicators_params,
-                                             pane_name=f"pane_{code}_{period.lower()}",
+                                             pane_name=f"pane_{code}_{cycle}_{period.lower()}",
                                              time_minspacing=time_minspacing,
                                              show_volume=False,
                                              chart_height=height)
