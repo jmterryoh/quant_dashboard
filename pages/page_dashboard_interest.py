@@ -121,17 +121,19 @@ def display_page():
             display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", time_minspacing=15, height=350)
 
         with col2:
-            #indicators_params_wk = {}
-            #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
-            indicators_params_dy = {}
-            indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
+            if sc.get_screen_width() >= 800:
+                #indicators_params_wk = {}
+                #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
+                #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
+                indicators_params_dy = {}
+                indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
+                display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
 
 
 button_refresh = None
 async def update_screen():
     while True:
+        ss.check_session('pages/page_dashboard_interest_m.py')
         if button_refresh:
             display_page()
         await asyncio.sleep(30)
