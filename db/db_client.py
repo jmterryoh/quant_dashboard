@@ -103,12 +103,34 @@ def fetch_result_from_remote_server(task, params):
 
     return response_data
 
-def fetch_threaded_result(task, params):
-    result = None
-    thread = threading.Thread(target=lambda: fetch_result_from_remote_server(task, params))
-    thread.start()
-    thread.join()
-    return result
+def insert_stock_interest(uidx, market, code, name, pattern, description):
+    task_name = "insert_stock_interest"
+    params = {'uidx': uidx,
+              'market': f'{market}',
+              'code': f'{code}',
+              'name': f'{name}',
+              'pattern': f'{pattern}',
+              'description':f'{description}'}
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "error":
+                st.error(respose["return"]["data"])
+                return False, respose["return"]["data"]
+            else:
+                return True, ""
+        else:
+            return False, "Error: no result values"
+    else:
+        return False, "Error: no return values"
+
+
+#def fetch_threaded_result(task, params):
+#    result = None
+#    thread = threading.Thread(target=lambda: fetch_result_from_remote_server(task, params))
+#    thread.start()
+#    thread.join()
+#    return result
 
 #task_name = "get_stocklist_searched"
 #params = {'idt': '20240323', 'seq': 1}
