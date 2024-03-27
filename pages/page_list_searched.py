@@ -123,18 +123,12 @@ def on_click_add():
         if "selected_rows" in grid1:
             selected_rows = grid1["selected_rows"]
             if selected_rows:
-                task_name = "insert_stock_interest"
-                params = {'uidx': 1,
-                          'market': f"{selected_rows[0]['market']}",
-                          'code': f"{selected_rows[0]['code']}",
-                          'name': f"{selected_rows[0]['name']}",
-                          'pattern': f"{selected_rows[0]['pattern']}",
-                          'description':""}
-                respose = dc.fetch_result_from_remote_server(task_name, params)
-                if "return" in respose:
-                    if "result" in respose["return"]:
-                        if respose["return"]["result"] == "error":
-                            st.error(respose["return"]["data"])
+                ret_Ok, output = dc.insert_stock_interest(uidx=1,
+                                                          market=selected_rows[0]['market'],
+                                                          code=selected_rows[0]['code'],
+                                                          name=selected_rows[0]['name'],
+                                                          pattern=selected_rows[0]['pattern'],
+                                                          description="")
 
 def display_remove_button(col13):
     global grid2
@@ -305,4 +299,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
