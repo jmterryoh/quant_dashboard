@@ -144,7 +144,7 @@ def main():
     with col1:
         grid1 = display_search_results()
         col11, col12, col13, col14 = st.columns(4)
-
+        st.text(grid1)
         if grid1:
             if 'selected_rows' in grid1:
                 grid1_selected_rows = grid1['selected_rows']
