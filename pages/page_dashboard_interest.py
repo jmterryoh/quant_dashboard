@@ -86,7 +86,7 @@ def display_stock_charts(market, name, code, indicators_params, cycle, period, i
         click_events = chart.get_stock_chart(symbol=stock_code,
                                              dataframe=df,
                                              indicators_params=indicators_params,
-                                             pane_name=f"pane_{code}_{cycle}_{period.lower()}",
+                                             pane_name=f"pane_{code}_{period.lower()}",
                                              time_minspacing=time_minspacing,
                                              show_volume=False,
                                              chart_height=height)
@@ -118,24 +118,20 @@ def display_page():
         with col1:
             indicators_params_dy = {}
             indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉_확대", period="3y", interval="1d", time_minspacing=15, height=350)
+            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", time_minspacing=15, height=350)
 
         with col2:
-            #if 'screen_width' in st.session_state:
-            #    width = st.session_state['screen_width']
-            #    if width >= 800:
             #indicators_params_wk = {}
             #indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
             #display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_wk, cycle="주봉", period="10y", interval="1wk", height=350)
             indicators_params_dy = {}
             indicators_params_dy = get_stock_indicators(uidx=1, market=market, code=code)
-            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉_와이드", period="3y", interval="1d", time_minspacing=3, height=350)
+            display_stock_charts(market=market, name=name, code=code, indicators_params=indicators_params_dy, cycle="일봉", period="3y", interval="1d", time_minspacing=3, height=350)
 
 
 button_refresh = None
 async def update_screen():
     while True:
-        ss.check_session('pages/page_dashboard_interest_m.py')
         if button_refresh:
             display_page()
         await asyncio.sleep(30)
@@ -148,8 +144,6 @@ if __name__ == "__main__":
     ss.check_session('pages/page_dashboard_interest.py')
     sb.menu_with_redirect()
     sc.show_min_sidebar()
-
-    #st.session_state['screen_width'] = sc.get_screen_width()
 
     button_refresh = st.toggle(label="정보갱신 30초", key="button_refresh", value=True)
 

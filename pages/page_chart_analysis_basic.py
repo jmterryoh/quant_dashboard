@@ -18,9 +18,8 @@ global vwap1_cb, vwap1_dt, vwap1_mt1, vwap1_mt2
 global vwap2_cb, vwap2_dt, vwap2_mt1, vwap2_mt2
 global vwap3_cb, vwap3_dt, vwap3_mt1, vwap3_mt2
 
-global stocklist_df, selected_stockname
+global stocklist_df
 stocklist_df = {}
-selected_stockname = None
 
 # 초기화 : session 에 control값을 대신하는 sv로 시작하는 key 값이 있는 경우(클릭 등의 이벤트로 화면이 갱신되는 경우) session 에서 값을 읽어서 global 변수를 채운다. -> 각 control 값은 global 변수로 다시 세팅
 # 각 control 의 key값으로 control에 직접 접근하지 않고, sv_key값에 복사하여 session 에 저장하고 page 를 재구성할 때 sv_key값을 control 의 value 로 입력해서 contorl을 관리
@@ -153,22 +152,6 @@ def on_change_vwap3_mt1():
 def on_change_vwap3_mt2():
     st.session_state['sv_vwap3_mt2'] = st.session_state['vwap3_mt2']
 
-# 관심종목 등록
-def on_click_save_stock_insterest():
-    global selected_stockname
-
-    if selected_stockname:
-        stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'code']].values
-        if stock.any():
-            market = stock[0][0]
-            code = stock[0][1]
-            name = selected_stockname    
-            ret_Ok, output = dc.insert_stock_interest(uidx=1,
-                                                    market=market,
-                                                    code=code,
-                                                    name=name,
-                                                    pattern="차트분석",
-                                                    description="")
 
 def main():
 
@@ -189,7 +172,7 @@ def main():
     global vwap1_cb, vwap1_dt, vwap1_mt1, vwap1_mt2
     global vwap2_cb, vwap2_dt, vwap2_mt1, vwap2_mt2
     global vwap3_cb, vwap3_dt, vwap3_mt1, vwap3_mt2
-    global stocklist_df, selected_stockname
+    global stocklist_df
 
     task_name = "get_stocklist_from_db"
     params = {}
@@ -291,7 +274,7 @@ def main():
         with col6:
             col61, col62 = st.columns(2)
             with col61:
-                if st.button(key="save_indicators", label="지표저장"):
+                if st.button(key="save", label="지표저장"):
                     if stock.any():
                         uidx, market, code = 1, stock[0][0], stock[0][1]
                         json_indicators = json.dumps(indicators_params)
@@ -307,12 +290,11 @@ def main():
                             if "result" in respose["return"]:
                                 if respose["return"]["result"] == "error":
                                     st.error(respose["return"]["data"])
-                st.button(key="load_indicators", label="지표로드", on_click=on_click_load_indicators)
-
             with col62:
-                st.button(key="save_stock_interest", label="관심등록", on_click=on_click_save_stock_insterest)
+                st.button(key="load", label="지표로드", on_click=on_click_load_indicators)
 
         show_volume = False
+
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=df
                                                 , indicators_params=indicators_params
