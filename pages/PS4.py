@@ -151,6 +151,8 @@ def main():
                 if grid1_selected_rows:
                     stock_code1 = grid1_selected_rows[0]['code'] + "." + grid1_selected_rows[0]['market']
                     stock_name1 = grid1_selected_rows[0]['name']
+            else:
+                st.text("No rows")
 
     with col2:
 
