@@ -162,6 +162,7 @@ def main():
                 'EMA_C': {'length': 224, 'color': 'black', 'linewidth': 2},
             },
         }
+        print(selected_stock_code)
         display_stock_charts(selected_stock_name, selected_stock_code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", height=350)
         indicators_params_wk = {
             'ema': {
