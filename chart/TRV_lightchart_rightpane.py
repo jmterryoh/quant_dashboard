@@ -2,7 +2,6 @@ import streamlit as st
 import json
 import numpy as np
 import pandas as pd
-import pandas_ta as ta
 from streamlit_lightweight_charts_ntf import renderLightweightCharts
 
 COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
