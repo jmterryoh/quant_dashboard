@@ -100,6 +100,7 @@ def display_search_results():
 def display_stock_charts(stock_name, stock_code, indicators_params, cycle, period, interval, height=350):
 
     df = {}
+    st.write(stock_name)
     st.write(stock_code)
     col1, col2 = st.columns(2)
     with col1:
