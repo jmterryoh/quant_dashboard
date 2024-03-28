@@ -154,8 +154,6 @@ def main():
 
         if grid1_selected_rows:
             selected_stock_name, selected_stock_code = stock_name1, stock_code1
-        else:
-            return
 
         indicators_params_dy = {
             'ema': {
