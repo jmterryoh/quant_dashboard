@@ -93,8 +93,8 @@ def display_search_results():
                        gridOptions=grid1_options,
                        allow_unsafe_jscode=True,
                        custom_css={"#gridToolBar":{"padding-bottom":"0px!important",}},
-                       #key="grid1",
-                       #reload_data=True,
+                       key="grid1",
+                       reload_data=True,
                        update_mode=(GridUpdateMode.MODEL_CHANGED|GridUpdateMode.GRID_CHANGED|GridUpdateMode.SELECTION_CHANGED|GridUpdateMode.VALUE_CHANGED))
         return grid1
                 
@@ -207,8 +207,8 @@ def display_interest_list():
                        gridOptions=grid2_options,
                        allow_unsafe_jscode=True,
                        custom_css={"#gridToolBar":{"padding-bottom":"0px!important",}},
-                       #key="grid2",
-                       #reload_data=True, 
+                       key="grid2",
+                       reload_data=True, 
                        update_mode=(GridUpdateMode.MODEL_CHANGED|GridUpdateMode.GRID_CHANGED|GridUpdateMode.SELECTION_CHANGED|GridUpdateMode.VALUE_CHANGED))
         return grid2
 
