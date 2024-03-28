@@ -100,6 +100,7 @@ def display_search_results():
 def display_stock_charts(stock_name, stock_code, indicators_params, cycle, period, interval, height=350):
 
     df = {}
+    st.write(stock_code)
     col1, col2 = st.columns(2)
     with col1:
         # Add subtitle
@@ -162,7 +163,6 @@ def main():
                 'EMA_C': {'length': 224, 'color': 'black', 'linewidth': 2},
             },
         }
-        print(selected_stock_code)
         display_stock_charts(selected_stock_name, selected_stock_code, indicators_params=indicators_params_dy, cycle="일봉", period="5y", interval="1d", height=350)
         indicators_params_wk = {
             'ema': {
