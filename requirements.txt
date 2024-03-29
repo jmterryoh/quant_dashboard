@@ -61,7 +61,7 @@ six
 smmap
 soupsieve
 streamlit
-streamlit-aggrid
+streamlit-aggrid==0.3.4.post3
 streamlit-js-eval
 streamlit-lightweight-charts
 streamlit-lightweight-charts-ntf
