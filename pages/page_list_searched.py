@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import session as ss
 from util import screen as sc
 from pages import sidebar as sb
-from chart import TRV_lightchart_rightpane as chart
+from chart import TRV_lightchart as chart
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
 from hts import YF_api as yf
 from db import db_client as dc
