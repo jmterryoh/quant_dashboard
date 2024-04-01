@@ -5,8 +5,11 @@ import pandas as pd
 import pandas_ta as ta
 from streamlit_lightweight_charts_ntf import renderLightweightCharts
 
-COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
-COLOR_BEAR = 'rgba(239,83,80,0.9)'  # #ef5350
+#COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
+#COLOR_BEAR = 'rgba(239,83,80,0.9)'  # #ef5350
+COLOR_BULL = 'rgba(231,25,9,0.8)' # #26a69a
+COLOR_BEAR = 'rgba(17,91,203,0.8)'  # #ef5350
+
 
 def dataToJSON(df, column, slice=0, color=None):
     data = df[['time', column, 'color']].copy()
@@ -256,7 +259,7 @@ def get_stock_chart(symbol
     zigzag_data = zigzag_data.reset_index()
     zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d')   
     zigzag_line_data = convertDataToJSON(zigzag_data, "value")
-    seriesMultipaneChart.append(get_series_line_string(title=f"ZIGZAG", data=zigzag_line_data, color="brown", linewidth=3, pane=0))
+    seriesMultipaneChart.append(get_series_line_string(title=f"ZIGZAG", data=zigzag_line_data, color="black", linewidth=2, pane=0))
 
     # Add volume data if show_volume is True
     vol_ASK = None
