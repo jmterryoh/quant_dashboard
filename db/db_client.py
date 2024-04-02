@@ -124,6 +124,30 @@ def insert_stock_interest(uidx, market, code, name, pattern, description):
     else:
         return False, "Error: no return values"
 
+def update_owned_stock_transaction(uidx, market, code, name, price, quantity, trtype, trdt, reason):
+    task_name = "update_owned_stock_transaction"
+    params = {'uidx': uidx,
+              'market': f'{market}',
+              'code': f'{code}',
+              'name': f'{name}',
+              'price': price,
+              'quantity': quantity,
+              'type': f'{trtype}',
+              'trdt': f'{trdt}',
+              'reason':f'{reason}'}
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "error":
+                st.error(respose["return"]["data"])
+                return False, respose["return"]["data"]
+            else:
+                return True, ""
+        else:
+            return False, "Error: no result values"
+    else:
+        return False, "Error: no return values"
+
 
 #def fetch_threaded_result(task, params):
 #    result = None
