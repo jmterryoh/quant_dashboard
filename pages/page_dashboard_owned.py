@@ -13,13 +13,13 @@ from datetime import datetime
 import json
 import asyncio
 
-PAGE_NAME = "관심종목"
+PAGE_NAME = "보유종목"
 
 #@st.cache_data
-def get_stocklist_interest():
+def get_owned_list():
     df = {}
 
-    task_name = "get_stocklist_interest"
+    task_name = "get_stocks_owned_all"
     params = {}
     respose = dc.fetch_result_from_remote_server(task_name, params)
     if "return" in respose:
@@ -33,7 +33,7 @@ def get_stocklist_interest():
     else:
         st.error("network error")
 
-    return df   
+    return df  
 
 #@st.cache_data
 def get_stock_indicators(uidx, market, code):
@@ -97,7 +97,7 @@ def display_stock_charts(market, name, code, indicators_params, cycle, period, i
 def display_page():
 
     df = {}
-    df = get_stocklist_interest()    
+    df = get_owned_list()    
     if df is None:
         return
     
@@ -107,8 +107,7 @@ def display_page():
         market = row['market']
         code = row['code']
         name = row['name']
-        pattern = row['pattern']
-        udt = row['udt']
+        price = row['price']
 
         # Add subtitle
         col_subtitle = sc.create_column_subtitle(f'{name} ({PAGE_NAME})')
@@ -136,7 +135,7 @@ def display_page():
 button_refresh = None
 async def update_screen():
     while True:
-        ss.check_session('pages/page_dashboard_interest.py')
+        ss.check_session('pages/page_dashboard_owned.py')
         if button_refresh:
             display_page()
         await asyncio.sleep(30)
@@ -146,7 +145,7 @@ async def update_screen():
 if __name__ == "__main__":
 
     st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-    ss.check_session('pages/page_dashboard_interest.py')
+    ss.check_session('pages/page_dashboard_owned.py')
     sb.menu_with_redirect()
     sc.show_min_sidebar()
 

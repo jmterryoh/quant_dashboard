@@ -36,7 +36,13 @@ def display_interest_list():
         if "result" in respose["return"]:
             if respose["return"]["result"] == "success":
                 df1 = pd.DataFrame(respose["return"]["data"])
-
+            elif respose["return"]["result"] == "error":
+                st.error(respose["return"]["data"])
+        else:
+            st.error("network error")
+    else:
+        st.error("network error")
+        
     if not df1.empty:                
 
         # ag-Grid 옵션 설정
@@ -80,6 +86,12 @@ def display_owned_list():
         if "result" in respose["return"]:
             if respose["return"]["result"] == "success":
                 df2 = pd.DataFrame(respose["return"]["data"])
+            elif respose["return"]["result"] == "error":
+                st.error(respose["return"]["data"])
+        else:
+            st.error("network error")
+    else:
+        st.error("network error")
 
     if not df2.empty:                
         
