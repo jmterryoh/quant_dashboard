@@ -12,6 +12,8 @@ from db import db_client as dc
 from datetime import datetime
 import json
 import asyncio
+from tradingview_ta import *
+
 
 PAGE_NAME = "관심종목"
 
@@ -100,6 +102,19 @@ def display_page():
     df = get_stocklist_interest()    
     if df is None:
         return
+    recommendation_list = []
+    codes = df["code"].tolist()
+    if codes:
+        krx_symbols = ['KRX:' + symbol for symbol in codes]
+        analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
+        for symbol in analysis:
+            if analysis[symbol]:
+                recommendation = analysis[symbol].summary['RECOMMENDATION']
+                indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
+                recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+        recommendation_df = pd.DataFrame(recommendation_list)
+        recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
+        df = pd.merge(df, recommendation_df, on='code', how='outer')    
     
     column_list = []  # 열을 저장할 리스트
 
@@ -109,9 +124,11 @@ def display_page():
         name = row['name']
         pattern = row['pattern']
         udt = row['udt']
+        recommendation = row['recommendation']
+        indicator = row['indicator']
 
         # Add subtitle
-        col_subtitle = sc.create_column_subtitle(f'{name} ({PAGE_NAME})')
+        col_subtitle = sc.create_column_subtitle(f'{name} ({PAGE_NAME}) {recommendation} {indicator}')
         st.markdown(col_subtitle, unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)

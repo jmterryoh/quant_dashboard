@@ -11,6 +11,7 @@ from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
 from hts import YF_api as yf
 from db import db_client as dc
 from util import screen as scr
+from tradingview_ta import *
 
 global grid1, grid2
 
@@ -69,8 +70,23 @@ def display_search_results():
                 if respose["return"]["result"] == "success":
                     df1 = pd.DataFrame(respose["return"]["data"])
     if df1 is not None:
+        recommendation_list = []
+        codes = df1["code"].tolist()
+        if codes:
+            krx_symbols = ['KRX:' + symbol for symbol in codes]
+            analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
+            for symbol in analysis:
+                if analysis[symbol]:
+                    recommendation = analysis[symbol].summary['RECOMMENDATION']
+                    indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
+                    recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+            recommendation_df = pd.DataFrame(recommendation_list)
+            recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
+            df1 = pd.merge(df1, recommendation_df, on='code', how='outer')
+            df1 = df1.sort_values(by='pattern')
+
         # ag-Grid 옵션 설정
-        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice"]])
+        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice", "recommendation", "indicator"]])
         # configure selection
         gb1.configure_selection(selection_mode="single", use_checkbox=True)
         gb1.configure_column("pattern", header_name="검색그룹", width=140)
@@ -83,6 +99,9 @@ def display_search_results():
         gb1.configure_column("stotprice", header_name="시총(억)", width=80
                             , type=["numericColumn","numberColumnFilter"]
                             , valueGetter="data.stotprice.toLocaleString('ko-KR')", precision=0)
+        gb1.configure_column("recommendation", header_name="추천", width=80)
+        gb1.configure_column("indicator", header_name="지표", width=140)
+
         #gb.configure_side_bar()
         grid1_options = gb1.build()
 
@@ -180,16 +199,32 @@ def display_interest_list():
                 df2 = pd.DataFrame(respose["return"]["data"])
 
     if df2 is not None:                
+        recommendation_list = []
+        codes = df2["code"].tolist()
+        if codes:
+            krx_symbols = ['KRX:' + symbol for symbol in codes]
+            analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
+            for symbol in analysis:
+                if analysis[symbol]:
+                    recommendation = analysis[symbol].summary['RECOMMENDATION']
+                    indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
+                    recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+            recommendation_df = pd.DataFrame(recommendation_list)
+            recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
+            df2 = pd.merge(df2, recommendation_df, on='code', how='outer')
+            df2 = df2.sort_values(by='pattern')
 
         # ag-Grid 옵션 설정
-        gb2 = GridOptionsBuilder.from_dataframe(df2[["pattern", "code", "market", "name", "description"]])
+        gb2 = GridOptionsBuilder.from_dataframe(df2[["pattern", "code", "market", "name", "recommendation", "indicator"]])
         # configure selection
         gb2.configure_selection(selection_mode="single", use_checkbox=True)
         gb2.configure_column("pattern", header_name="검색그룹", width=140)
         gb2.configure_column("code", header_name="코드", width=70)
         gb2.configure_column("market", header_name="시장", width=70)
         gb2.configure_column("name", header_name="종목명", width=140)
-        gb2.configure_column("description", header_name="메모", width=160)
+        #gb2.configure_column("description", header_name="메모", width=160)
+        gb2.configure_column("recommendation", header_name="추천", width=80)
+        gb2.configure_column("indicator", header_name="지표", width=140)
 
         #gb.configure_side_bar()
         grid2_options = gb2.build()
