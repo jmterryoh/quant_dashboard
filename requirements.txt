@@ -81,3 +81,4 @@ webencodings
 websockets
 yfinance
 zipp
+tradingview-ta
