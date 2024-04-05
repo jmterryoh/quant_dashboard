@@ -11,8 +11,8 @@ from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode
 from hts import YF_api as yf
 from db import db_client as dc
 from util import screen as scr
+from util import trvta as tt
 import time
-from tradingview_ta import *
 
 global grid1, grid2
 
@@ -47,16 +47,9 @@ def display_interest_list():
     if not df1.empty:                
         recommendation_list = []
         codes = df1["code"].tolist()
-        if codes:
-            krx_symbols = ['KRX:' + symbol for symbol in codes]
-            analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
-            for symbol in analysis:
-                if analysis[symbol]:
-                    recommendation = analysis[symbol].summary['RECOMMENDATION']
-                    indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
-                    recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+        recommendation_list = tt.get_tradingview_ta(codes)
+        if recommendation_list:
             recommendation_df = pd.DataFrame(recommendation_list)
-            recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
             df1 = pd.merge(df1, recommendation_df, on='code', how='outer')
             df1 = df1.sort_values(by='pattern')
 
@@ -117,16 +110,9 @@ def display_owned_list():
 
         recommendation_list = []
         codes = df2["code"].tolist()
-        if codes:
-            krx_symbols = ['KRX:' + symbol for symbol in codes]
-            analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
-            for symbol in analysis:
-                if analysis[symbol]:
-                    recommendation = analysis[symbol].summary['RECOMMENDATION']
-                    indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
-                    recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+        recommendation_list = tt.get_tradingview_ta(codes)
+        if recommendation_list:
             recommendation_df = pd.DataFrame(recommendation_list)
-            recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
             df2 = pd.merge(df2, recommendation_df, on='code', how='outer')
             df2 = df2.sort_values(by='name')
 

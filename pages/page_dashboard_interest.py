@@ -12,7 +12,7 @@ from db import db_client as dc
 from datetime import datetime
 import json
 import asyncio
-from tradingview_ta import *
+from util import trvta as tt
 
 
 PAGE_NAME = "관심종목"
@@ -104,17 +104,11 @@ def display_page():
         return
     recommendation_list = []
     codes = df["code"].tolist()
-    if codes:
-        krx_symbols = ['KRX:' + symbol for symbol in codes]
-        analysis = get_multiple_analysis(screener="korea", interval=Interval.INTERVAL_1_HOUR, symbols=krx_symbols)
-        for symbol in analysis:
-            if analysis[symbol]:
-                recommendation = analysis[symbol].summary['RECOMMENDATION']
-                indicator = f"+{analysis[symbol].summary['BUY']},-{analysis[symbol].summary['SELL']},({analysis[symbol].summary['NEUTRAL']})"
-                recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+    recommendation_list = tt.get_tradingview_ta(codes)
+    if recommendation_list:
         recommendation_df = pd.DataFrame(recommendation_list)
-        recommendation_df['recommendation'] = recommendation_df['recommendation'].replace({'BUY':'매수', 'SELL':'매도', 'NEUTRAL':'중립', 'STRONG_BUY':'강력매수', 'STRONG_SELL':'강력매도'})
-        df = pd.merge(df, recommendation_df, on='code', how='outer')    
+        df = pd.merge(df, recommendation_df, on='code', how='outer')
+        df = df.sort_values(by='code') 
     
     column_list = []  # 열을 저장할 리스트
 
