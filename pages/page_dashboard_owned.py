@@ -101,6 +101,11 @@ def display_page():
     df = get_owned_list()    
     if df is None:
         return
+
+    df = df[df['quantity'] > 0]
+    if df.empty:
+        return
+
     recommendation_list = []
     codes = df["code"].tolist()
     recommendation_list = tt.get_tradingview_ta(codes)
