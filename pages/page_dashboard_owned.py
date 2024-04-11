@@ -105,6 +105,9 @@ def display_page():
     df = df[df['quantity'] > 0]
     if df.empty:
         return
+    df = df[df['normal'] == 'Y']
+    if df.empty:
+        return
 
     recommendation_list = []
     codes = df["code"].tolist()
