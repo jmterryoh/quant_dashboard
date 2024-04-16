@@ -79,7 +79,7 @@ def display_search_results():
             df1 = df1.sort_values(by='pattern')
 
         # ag-Grid 옵션 설정
-        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice", "recommendation", "indicator"]])
+        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice", "sector", "recommendation", "indicator"]])
         # configure selection
         gb1.configure_selection(selection_mode="single", use_checkbox=True)
         gb1.configure_column("pattern", header_name="검색그룹", width=140)
@@ -92,6 +92,7 @@ def display_search_results():
         gb1.configure_column("stotprice", header_name="시총(억)", width=80
                             , type=["numericColumn","numberColumnFilter"]
                             , valueGetter="data.stotprice.toLocaleString('ko-KR')", precision=0)
+        gb1.configure_column("sector", header_name="업종", width=100)
         gb1.configure_column("recommendation", header_name="추천", width=80)
         gb1.configure_column("indicator", header_name="지표", width=140)
 

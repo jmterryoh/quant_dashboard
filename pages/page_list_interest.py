@@ -79,7 +79,7 @@ def display_search_results():
             df1 = df1.sort_values(by='pattern')
 
         # ag-Grid 옵션 설정
-        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice", "recommendation", "indicator"]])
+        gb1 = GridOptionsBuilder.from_dataframe(df1[["pattern", "code", "market", "name", "price", "stotprice", "sector", "recommendation", "indicator"]])
         # configure selection
         gb1.configure_selection(selection_mode="single", use_checkbox=True)
         gb1.configure_column("pattern", header_name="검색그룹", width=140)
@@ -92,6 +92,7 @@ def display_search_results():
         gb1.configure_column("stotprice", header_name="시총(억)", width=80
                             , type=["numericColumn","numberColumnFilter"]
                             , valueGetter="data.stotprice.toLocaleString('ko-KR')", precision=0)
+        gb1.configure_column("sector", header_name="업종", width=100)
         gb1.configure_column("recommendation", header_name="추천", width=80)
         gb1.configure_column("indicator", header_name="지표", width=140)
 
@@ -201,14 +202,14 @@ def display_interest_list():
             df2 = df2.sort_values(by='pattern')
 
         # ag-Grid 옵션 설정
-        gb2 = GridOptionsBuilder.from_dataframe(df2[["pattern", "code", "market", "name", "recommendation", "indicator"]])
+        gb2 = GridOptionsBuilder.from_dataframe(df2[["pattern", "code", "market", "name", "sector", "recommendation", "indicator"]])
         # configure selection
         gb2.configure_selection(selection_mode="single", use_checkbox=True)
         gb2.configure_column("pattern", header_name="검색그룹", width=140)
         gb2.configure_column("code", header_name="코드", width=70)
         gb2.configure_column("market", header_name="시장", width=70)
         gb2.configure_column("name", header_name="종목명", width=140)
-        #gb2.configure_column("description", header_name="메모", width=160)
+        gb2.configure_column("sector", header_name="업종", width=100)
         gb2.configure_column("recommendation", header_name="추천", width=80)
         gb2.configure_column("indicator", header_name="지표", width=140)
 
