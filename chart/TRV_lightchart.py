@@ -123,48 +123,58 @@ def set_vwap_indicators(series, indicators):
 
     return series
 
-def calculate_zigzag(close_prices, thresholds):
+#def calculate_zigzag(close_prices, thresholds):
+def calculate_zigzag(close_prices):
     pivot_points = []
-    pivot_high = float('-inf')
-    pivot_low = float('inf')
-    pivot_type = None
+    current_peak = float('-inf')
+    current_valley = float('inf')
+    current_pivot_type = None
 
-    for i in range(len(close_prices)):
+    for i in range(len(close_prices) - 1):
         current_close = close_prices[i]
+        next_close = close_prices[i + 1]
 
-        if pivot_type is None:
-            pivot_high = pivot_low = current_close
-            pivot_type = 'peak' if i < len(close_prices) - 1 and current_close > close_prices[i + 1] else 'valley'
-        elif pivot_type == 'peak':
-            if current_close > pivot_high:
-                pivot_high = current_close
-            elif current_close < pivot_high - thresholds[min(i, len(thresholds)-1)]:
-                pivot_points.append((i, pivot_high))
-                pivot_low = current_close
-                pivot_type = 'valley'
-        elif pivot_type == 'valley':
-            if current_close < pivot_low:
-                pivot_low = current_close
-            elif current_close > pivot_low + thresholds[min(i, len(thresholds)-1)]:
-                pivot_points.append((i, pivot_low))
-                pivot_high = current_close
-                pivot_type = 'peak'
+        if current_pivot_type is None:
+            current_peak = current_valley = current_close
+            current_peak_i = current_valley_i = i
+            current_pivot_type = 'peak' if current_close > next_close else 'valley'
+        elif current_pivot_type == 'peak':
+            if current_close >= current_peak:
+                current_peak_i = i
+                current_peak = current_close
+            elif current_close < current_peak:# - thresholds[min(i, len(thresholds)-1)]:
+                pivot_points.append((current_peak_i, current_peak, 'peak'))
+                current_valley_i = i
+                current_valley = current_close
+                current_pivot_type = 'valley'
+        elif current_pivot_type == 'valley':
+            if current_close <= current_valley:
+                current_valley_i = i
+                current_valley = current_close
+            elif current_close > current_valley:# + thresholds[min(i, len(thresholds)-1)]:
+                pivot_points.append((current_valley_i, current_valley, 'valley'))
+                current_peak_i = i
+                current_peak = current_close
+                current_pivot_type = 'peak'
+    pivot_points.append((i, close_prices[i], 'last'))
 
-    filtered_pivot_points = []
-    prev_pivot_type = None
-    for i in range(1, len(pivot_points)):
-        current_pivot = pivot_points[i][1]
-        current_pivot_index = pivot_points[i][0]
-        if pivot_points[i][1] > pivot_points[i - 1][1]:
-            if prev_pivot_type == 'valley':
-                filtered_pivot_points.append((pivot_points[i - 1][0], pivot_points[i - 1][1], current_pivot_index, current_pivot))
-            prev_pivot_type = 'peak'
-        elif pivot_points[i][1] < pivot_points[i - 1][1]:
-            if prev_pivot_type == 'peak':
-                filtered_pivot_points.append((pivot_points[i - 1][0], pivot_points[i - 1][1], current_pivot_index, current_pivot))
-            prev_pivot_type = 'valley'
+    return pivot_points
 
-    return filtered_pivot_points
+    # filtered_pivot_points = []
+    # prev_pivot_type = None
+    # for i in range(1, len(pivot_points)):
+    #     current_pivot = pivot_points[i][1]
+    #     current_pivot_index = pivot_points[i][0]
+    #     if pivot_points[i][1] > pivot_points[i - 1][1]:
+    #         if prev_pivot_type == 'valley':
+    #             filtered_pivot_points.append((pivot_points[i - 1][0], pivot_points[i - 1][1], current_pivot_index, current_pivot))
+    #         prev_pivot_type = 'peak'
+    #     elif pivot_points[i][1] < pivot_points[i - 1][1]:
+    #         if prev_pivot_type == 'peak':
+    #             filtered_pivot_points.append((pivot_points[i - 1][0], pivot_points[i - 1][1], current_pivot_index, current_pivot))
+    #         prev_pivot_type = 'valley'
+
+    # return filtered_pivot_points
 
 def get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01):
 
@@ -174,19 +184,20 @@ def get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01):
 
     # Set the number of periods for calculating the standard deviation
     # Calculate the rolling standard deviation of close prices
-    rolling_std = np.std([stock_prices[i-window_size:i] for i in range(window_size, len(stock_prices))], axis=1)
+    #rolling_std = np.std([stock_prices[i-window_size:i] for i in range(window_size, len(stock_prices))], axis=1)
 
     # Set threshold dynamically based on rolling standard deviation
-    thresholds = rolling_std * std_threshold
+    #thresholds = rolling_std * std_threshold
 
     # Calculate Zigzag pivot points
-    zigzag_pivots = calculate_zigzag(stock_prices, thresholds)
+    #zigzag_pivots = calculate_zigzag(stock_prices, thresholds)
+    zigzag_pivots = calculate_zigzag(stock_prices)
 
     zigzag_lines_data = []
     for pivot in zigzag_pivots:
         zigzag_lines_data.append({"time": dates[pivot[0]], "value": pivot[1]})
     # 마지막 pivot 값 추가
-    zigzag_lines_data.append({"time": dates[pivot[2]], "value": pivot[3]})
+    #zigzag_lines_data.append({"time": dates[pivot[2]], "value": pivot[3]})
     # 마지막 time, value 값 추가
     zigzag_lines_data.append({"time":dataframe.index[-1], "value":dataframe.iloc[-1]['Close']})
 
