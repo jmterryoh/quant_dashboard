@@ -9,7 +9,7 @@ from pages import sidebar as sb
 from datetime import datetime, timedelta
 from chart import TRV_lightchart as chart
 from hts import YF_api as yf
-from db import db_client as dc
+from middleware import md_client as dc
 import json
 
 
