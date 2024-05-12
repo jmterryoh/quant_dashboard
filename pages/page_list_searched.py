@@ -69,7 +69,7 @@ def display_search_results():
             if "result" in respose["return"]:
                 if respose["return"]["result"] == "success":
                     df1 = pd.DataFrame(respose["return"]["data"])
-    if df1 is not None:
+    if not df1.empty:
         recommendation_list = []
         codes = df1["code"].tolist()
         recommendation_list = tt.get_tradingview_ta(codes)

@@ -69,7 +69,7 @@ def display_search_results():
             if "result" in respose["return"]:
                 if respose["return"]["result"] == "success":
                     df1 = pd.DataFrame(respose["return"]["data"])
-    if df1 is not None:
+    if not df1.empty:
         recommendation_list = []
         codes = df1["code"].tolist()
         recommendation_list = tt.get_tradingview_ta(codes)
@@ -147,8 +147,9 @@ def display_remove_button(col13):
     global grid2
 
     grid2_selected_rows = None
-    if 'selected_rows' in grid2:
-        grid2_selected_rows = grid2['selected_rows']
+    if grid2:
+        if 'selected_rows' in grid2:
+            grid2_selected_rows = grid2['selected_rows']
 
     with col13:
         if grid2_selected_rows:
@@ -192,7 +193,7 @@ def display_interest_list():
             if respose["return"]["result"] == "success":
                 df2 = pd.DataFrame(respose["return"]["data"])
 
-    if df2 is not None:                
+    if not df2.empty:                
         recommendation_list = []
         codes = df2["code"].tolist()
         recommendation_list = tt.get_tradingview_ta(codes)

@@ -100,9 +100,9 @@ def display_page():
 
     df = {}
     df = get_stocklist_interest()    
-    if df is None:
+    if df is None or df.empty:
         return
-    print(df)
+
     recommendation_list = []
     codes = df["code"].tolist()
     recommendation_list = tt.get_tradingview_ta(codes)
