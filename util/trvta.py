@@ -11,6 +11,10 @@ def get_tradingview_ta(stock_codes, interval=Interval.INTERVAL_1_DAY):
                 recommendation = analysis[symbol].oscillators['RECOMMENDATION']
                 recommendation = recommendation.replace('STRONG_BUY','강력매수').replace('STRONG_SELL','강력매도').replace('BUY','매수').replace('SELL','매도').replace('NEUTRAL','중립')
                 indicator = f"+{analysis[symbol].oscillators['BUY']},-{analysis[symbol].oscillators['SELL']},({analysis[symbol].oscillators['NEUTRAL']})"
-                recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator})
+                time =  analysis[symbol].time.strftime("%m-%d %H:%M")
+                open_price = analysis[symbol].indicators['open']
+                close_price = analysis[symbol].indicators['close']
+                increase_rate = int((analysis[symbol].indicators['close'] - analysis[symbol].indicators['open']) / analysis[symbol].indicators['open'] * 100 * 100) / 100
+                recommendation_list.append({"code":symbol.split(':')[1], "recommendation":recommendation, "indicator":indicator, "time":time, "open":open_price, "close":close_price, "increase":increase_rate})
 
     return recommendation_list
