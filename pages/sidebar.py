@@ -4,12 +4,12 @@ from util import session as ss
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("pages/page_dashboard_interest.py", label="관심종목")
-    st.sidebar.page_link("pages/page_dashboard_owned.py", label="보유종목")
+    #st.sidebar.page_link("pages/page_dashboard_owned.py", label="보유종목")
     st.sidebar.divider()
     st.sidebar.page_link("pages/page_list_searched.py", label="조건검색")
     st.sidebar.page_link("pages/page_list_interest.py", label="관심추가")
     st.sidebar.page_link("pages/page_chart_analysis_basic.py", label="차트분석")
-    st.sidebar.page_link("pages/page_list_owned.py", label="거래등록")
+    #st.sidebar.page_link("pages/page_list_owned.py", label="거래등록")
     st.sidebar.divider()
     st.sidebar.page_link("pages/page_algo_list_for_buy.py", label="자동등록")
     st.sidebar.divider()
