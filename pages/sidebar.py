@@ -11,7 +11,7 @@ def authenticated_menu():
     st.sidebar.page_link("pages/page_chart_analysis_basic.py", label="차트분석")
     #st.sidebar.page_link("pages/page_list_owned.py", label="거래등록")
     st.sidebar.divider()
-    st.sidebar.page_link("pages/page_algo_list_for_buy.py", label="자동등록")
+    st.sidebar.page_link("pages/page_algo_list_searched.py", label="자동관심")
     st.sidebar.divider()
     logout = st.sidebar.button(label="Logout")
     if logout:
