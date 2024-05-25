@@ -93,20 +93,21 @@ def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_da
     try:
         # 1. VWAP 계산(종가기준)
         # 0.003초 소요
+        diff = 0.0
         vwap_df = calculate_anchored_vwap(df=price_df, anchor_string_date=anchor_string_date, anchor_base="min", price_base="close", multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
         vwap_df.fillna(0, inplace=True) # NaN 을 0으로 변경
-        # df = vwap_df.tail(1)
-        # for index, row in df.iterrows():
-        #     v2 = int(row['std2p'])
-        #     v1 = int(row['std1p'])
-        #     diff = (v2-v1)/v1 * 100
+        df = vwap_df.tail(1)
+        for index, row in df.iterrows():
+            v2 = int(row['std2p'])
+            v1 = int(row['std1p'])
+            diff = (v2-v1)/v1 * 100
         #     if diff >= 3.0:
         #         close = int(row['close'])
         #         vw = int(row['vwap'])
         #         if close > vw:
         #             print(f"{stock_name}: {diff}%")
 
-        return True, vwap_df
+        return True, vwap_df, round(diff, 1)
 
     except Exception as e:
         print("Error in anchored_vwap_to_database: ", e)
@@ -354,8 +355,8 @@ def main():
             price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
 
             # 2. vwap 계산 후 DB에 저장
-            success, vwap_df = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
-                                                        increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
+            success, vwap_df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
+                                                                   increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
             if success:
                 vwap_df.drop(columns=['symbol'], inplace=True)
                 vwap_df.reset_index(inplace=True)
@@ -364,7 +365,9 @@ def main():
                 vwap_df['time'] = vwap_df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
                 vwap_df.set_index('time', inplace=True)
                 df = vwap_df
-                #print(df)
+
+                with col52:
+                    st.text_input('밴드갭', value=f"{band_gap}%", disabled=True, key="band_gap")
 
             tvdata.drop(columns=['symbol'], inplace=True)
             tvdata.reset_index(inplace=True)
