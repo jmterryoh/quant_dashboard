@@ -22,6 +22,9 @@ global stocklist_df, selected_stockname
 stocklist_df = {}
 selected_stockname = None
 
+current_page = "pages/page_chart_analysis_basic.py"
+
+
 # 초기화 : session 에 control값을 대신하는 sv로 시작하는 key 값이 있는 경우(클릭 등의 이벤트로 화면이 갱신되는 경우) session 에서 값을 읽어서 global 변수를 채운다. -> 각 control 값은 global 변수로 다시 세팅
 # 각 control 의 key값으로 control에 직접 접근하지 않고, sv_key값에 복사하여 session 에 저장하고 page 를 재구성할 때 sv_key값을 control 의 value 로 입력해서 contorl을 관리
 # 각 control 에 event(on_click, on_change) 발생시 event 콜백함수안에 sv_key 값에 control 값을 저장하고 page 를 다시 구성할 때 sv_key 값을 읽어와서 control 값으로 세팅
@@ -173,7 +176,7 @@ def on_click_save_stock_insterest():
 def main():
 
     st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-    ss.check_session('pages/page_chart_analysis_basic.py')
+    ss.check_session(current_page)
     sb.menu_with_redirect()
     sc.show_min_sidebar()
 
