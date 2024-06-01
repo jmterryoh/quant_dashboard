@@ -32,10 +32,11 @@ multiplier4 = 2.0
 current_page = "pages/page_chart_analysis_vwap.py"
 
 # Anchored VWAP 
-def calculate_anchored_vwap(df, anchor_string_date, anchor_base, price_base, multiplier1, multiplier2, multiplier3, multiplier4):
+def calculate_anchored_vwap(df, anchor_string_date, anchor_base, price_base, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
 
     start_time = anchor_string_date + "000000"
-    end_time = anchor_string_date + "235959"
+    #end_time = anchor_string_date + "235959"
+    end_time = increase10_string_date + "235959"  # anchor_datetime 시점변경: anchor 탐지일 ~ 장대양봉일
 
     oneday_df = df.loc[(start_time <= df.index) & (df.index <= end_time)].copy()
     #oneday_df.set_index('datetime', inplace=True)
@@ -94,7 +95,8 @@ def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_da
         # 1. VWAP 계산(종가기준)
         # 0.003초 소요
         diff = 0.0
-        vwap_df = calculate_anchored_vwap(df=price_df, anchor_string_date=anchor_string_date, anchor_base="min", price_base="close", multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
+        vwap_df = calculate_anchored_vwap(df=price_df, anchor_string_date=anchor_string_date, anchor_base="min", price_base="close", increase10_string_date=increase10_string_date,
+                                          multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
         vwap_df.fillna(0, inplace=True) # NaN 을 0으로 변경
         df = vwap_df.tail(1)
         for index, row in df.iterrows():
@@ -301,7 +303,7 @@ def main():
         with col5:
             col51, col52 = st.columns(2)
             with col51:
-                dt = datetime.strptime(i10dt, "%Y%m%d")
+                dt = datetime.strptime(idt, "%Y%m%d")
                 string_date = dt.strftime('%Y-%m-%d')
                 st.text_input('탐지일', value=string_date, disabled=True, key="detected_date")
         with col6:
