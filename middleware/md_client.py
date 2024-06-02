@@ -267,11 +267,12 @@ def insert_algo_stock_for_buy(uidx, aidx, market, code, name, pattern, stoploss_
     else:
         return False, "Error: no return values"
 
-def update_algo_stock_for_sell(market, code, pattern, stoploss_price, description):
+def update_algo_stock_for_sell(market, code, pattern, algorithm_sell, stoploss_price, description):
     task_name = "update_algo_stock_for_sell"
     params = {'market': f'{market}',
               'code': f'{code}',
               'pattern':f'{pattern}',
+              'algorithm_sell':f'{algorithm_sell}',
               'stoploss_price':int(stoploss_price),
               'description': f"{description}"}
     respose = fetch_result_from_remote_server(task_name, params)
@@ -297,6 +298,26 @@ def is_holiday(string_date):
                 df = pd.DataFrame(respose["return"]["data"])
                 if len(df) > 0:
                     return True, ""
+            elif respose["return"]["result"] == "error":
+                return False, respose["return"]["data"]
+        else:
+            return False, "Error: no result values"
+    else:
+        return False, "Error: no return values"
+
+def get_calendar_holidays(string_date_from):
+
+    task_name = "get_calendar_holidays"
+    params = {'date_from': f'{string_date_from}'}
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                df = pd.DataFrame(respose["return"]["data"])
+                if len(df) > 0:
+                    return True, df
+                else:
+                    return False, "Error: no result values"
             elif respose["return"]["result"] == "error":
                 return False, respose["return"]["data"]
         else:
@@ -364,13 +385,14 @@ def get_algo_stocklist_for_buy():
                     print("get_algo_stocklist_for_buy: None")
     return None, None
 
-def get_algo_stock_for_buy_trade_exists(uidx, aidx, code, effective_date, description):
+def get_algo_stock_for_buy_trade_exists(uidx, aidx, code, effective_date, algorithm_buy, description):
     task_name = "get_algo_stock_for_buy_trade_exists"
     params = { 
         "uidx": int(uidx),
         "aidx": int(aidx),
         "code": f"{code}",
         "effective_date": f"{effective_date}",
+        "algorithm_buy": f"{algorithm_buy}",
         "description": f"{description}"
     }
     respose = fetch_result_from_remote_server(task_name, params)
@@ -382,6 +404,25 @@ def get_algo_stock_for_buy_trade_exists(uidx, aidx, code, effective_date, descri
                     return True, df
                 else:
                     print("get_algo_stock_for_buy_trade_exists: None")
+    return False, None
+
+def get_algo_stock_for_sell_trade_exists(uidx, aidx, code, algorithm_buy):
+    task_name = "get_algo_stock_for_sell_trade_exists"
+    params = { 
+        "uidx": int(uidx),
+        "aidx": int(aidx),
+        "code": f"{code}",
+        "algorithm_buy": f"{algorithm_buy}"
+    }
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                df = pd.DataFrame(respose["return"]["data"])
+                if len(df) > 0:
+                    return True, df
+                else:
+                    print("get_algo_stock_for_sell_trade_exists: None")
     return False, None
 
 def get_algo_stocklist_for_sell():
