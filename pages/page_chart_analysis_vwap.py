@@ -243,7 +243,7 @@ def main():
     global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
     global stocklist_df, selected_stockname, selected_minutes
 
-    task_name = "get_algo_stocks_increase10"
+    task_name = "get_algo_stocks_increase10_history"
     params = {}
     respose = dc.fetch_result_from_remote_server(task_name, params)
     if "return" in respose:
