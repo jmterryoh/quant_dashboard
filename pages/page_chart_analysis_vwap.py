@@ -243,7 +243,7 @@ def main():
     global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
     global stocklist_df, selected_stockname, selected_minutes
 
-    task_name = "get_algo_stocks_increase10_history"
+    task_name = "get_algo_stocks_increase10"
     params = {}
     respose = dc.fetch_result_from_remote_server(task_name, params)
     if "return" in respose:
@@ -313,9 +313,12 @@ def main():
                 today = datetime.now(pytz.timezone('Asia/Seoul'))
                 vdt_one_week_ago = vdt_date - timedelta(days=0)
                 days_difference = (today - vdt_one_week_ago).days
-                selected_minutes = st.selectbox('분봉 선택', index=2, options=['3분','5분','15분','30분'], key="minutes")
+                selected_minutes = st.selectbox('분봉 선택', index=2, options=['1분','3분','5분','15분','30분'], key="minutes")
                 if selected_minutes:
-                    if selected_minutes == '3분':
+                    if selected_minutes == '1분':
+                        data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
+                        interval = Interval.in_1_minute
+                    elif selected_minutes == '3분':
                         data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
                         interval = Interval.in_3_minute
                     elif selected_minutes == '5분':
