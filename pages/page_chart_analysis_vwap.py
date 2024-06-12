@@ -313,7 +313,7 @@ def main():
                 today = datetime.now(pytz.timezone('Asia/Seoul'))
                 vdt_one_week_ago = vdt_date - timedelta(days=0)
                 days_difference = (today - vdt_one_week_ago).days
-                selected_minutes = st.selectbox('분봉 선택', index=2, options=['1분','3분','5분','15분','30분'], key="minutes")
+                selected_minutes = st.selectbox('분봉 선택', index=2, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
                 if selected_minutes:
                     if selected_minutes == '1분':
                         data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
@@ -330,6 +330,12 @@ def main():
                     elif selected_minutes == '30분':
                         data_count = days_difference * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
                         interval = Interval.in_30_minute
+                    elif selected_minutes == '1시간':
+                        data_count = days_difference * 8  # 1시간 기준 1시간: 1개, 7.5시간: 8
+                        interval = Interval.in_1_hour
+                    elif selected_minutes == '1일':
+                        data_count = days_difference * 10  # 1일 기준, 1개
+                        interval = Interval.in_daily
 
  
         # for index, row in stocklist_df.iterrows():
@@ -381,7 +387,7 @@ def main():
             tvdata['time'] = tvdata['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
             tvdata.set_index('time', inplace=True)
 
-        len_df = len(df)
+        len_df = len(tvdata)
         if len_df <= ema_A_length: ema_A_length = 0
         if len_df <= ema_B_length: ema_B_length = 0
         if len_df <= ema_C_length: ema_C_length = 0
