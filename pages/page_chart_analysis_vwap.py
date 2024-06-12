@@ -293,9 +293,9 @@ def main():
         with col4:
             col41, col42 = st.columns(2)
             with col41:
-                dt = datetime.strptime(vdt, "%Y%m%d")
-                string_date = dt.strftime('%Y-%m-%d')
-                st.text_input('직전저점일', value=string_date, disabled=True, key="valley_date")
+                #dt = datetime.strptime(vdt, "%Y%m%d")
+                #string_date = dt.strftime('%Y-%m-%d')
+                st.text_input('조검검색', value=pattern, disabled=True, key="valley_date")
             with col42:
                 dt = datetime.strptime(i10dt, "%Y%m%d")
                 string_date = dt.strftime('%Y-%m-%d')
