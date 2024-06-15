@@ -357,10 +357,10 @@ def main():
                             data_count = days_difference * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
                             interval = Interval.in_30_minute
                         elif selected_minutes == '1시간':
-                            data_count = days_difference * 8 * 3 # 1시간 기준 1시간: 1개, 7.5시간: 8
+                            data_count = days_difference * 8 + 4 * 8 # 1시간 기준 1시간: 1개, 7.5시간: 8
                             interval = Interval.in_1_hour
                         elif selected_minutes == '1일':
-                            data_count = days_difference * 5  # 1일 기준, 1개
+                            data_count = days_difference + 25  # 1일 기준, 1개
                             interval = Interval.in_daily
 
         if data_count is None:
