@@ -31,6 +31,58 @@ multiplier4 = 2.0
 
 current_page = "pages/page_chart_analysis_vwap.py"
 
+def get_detected_dates(year_from, month_from, day_from):
+    # 한국 시간대 설정
+    korea_timezone = pytz.timezone('Asia/Seoul')
+
+    # 오늘 날짜 설정 (한국 시간대)
+    end_date = datetime.now(korea_timezone)
+
+    # 시작 날짜 설정
+    start_date = korea_timezone.localize(datetime(year_from, month_from, day_from))
+
+    # 한국의 주요 공휴일 리스트 (2024년)
+    korean_holidays = [
+        "2024-06-06", # 현충일
+        "2024-08-15", # 광복절
+        "2024-09-16", "2024-09-17", "2024-09-18", # 추석 연휴
+        "2024-10-03", # 개천절
+        "2024-10-09", # 한글날
+        "2024-12-25" # 성탄절
+    ]
+
+    # 문자열을 datetime 객체로 변환하고, 타임존 정보 추가
+    korean_holidays = [korea_timezone.localize(datetime.strptime(date, "%Y-%m-%d")) for date in korean_holidays]
+
+    # 결과 날짜 리스트 초기화
+    business_days = []
+
+    # 시작 날짜부터 종료 날짜까지 반복
+    current_date = start_date
+    while current_date <= end_date:
+        # 주말이 아니고 공휴일이 아닌 경우
+        if current_date.weekday() < 5 and current_date not in korean_holidays:
+            business_days.append(current_date.strftime("%Y%m%d"))
+        current_date += timedelta(days=1)
+
+    # 날짜 목록을 내림차순으로 정렬하고 상위 20개 추출
+    business_days = sorted(business_days, reverse=True)[:20]        
+
+    return business_days
+
+def get_detected_stocks(idt):
+    task_name = "get_algo_stocks_increase10_by_date"
+    params = { "idt": f"{idt}" }
+    respose = dc.fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                stocklist_df = pd.DataFrame(respose["return"]["data"])
+                if stocklist_df is not None and not stocklist_df.empty:
+                    stocknames = stocklist_df['name'].tolist()
+                    return True, stocknames, stocklist_df
+    return False, None, None
+
 # Anchored VWAP 
 def calculate_anchored_vwap(df, anchor_string_date, anchor_base, price_base, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
 
@@ -132,17 +184,12 @@ def init_session_control_values():
     emaB = False if 'sv_emaB' not in st.session_state else st.session_state['sv_emaB']
     emaC = False if 'sv_emaC' not in st.session_state else st.session_state['sv_emaC']
     emaD = False if 'sv_emaD' not in st.session_state else st.session_state['sv_emaD']
-    emaE = False if 'sv_emaE' not in st.session_state else st.session_state['sv_emaE']
-    emaF = False if 'sv_emaF' not in st.session_state else st.session_state['sv_emaF']
-    emaG = False if 'sv_emaG' not in st.session_state else st.session_state['sv_emaG']
-    emaH = False if 'sv_emaH' not in st.session_state else st.session_state['sv_emaH']
 
 
 def clear_session_control_values():
     one_month_ago = datetime.today() - timedelta(days=30)
     
     st.session_state['sv_emaA'], st.session_state['sv_emaB'], st.session_state['sv_emaC'], st.session_state['sv_emaD'] = False, False, False, False
-    st.session_state['sv_emaE'], st.session_state['sv_emaF'], st.session_state['sv_emaH'], st.session_state['sv_emaG'] = False, False, False, False
 
 def on_change_stock():
     clear_session_control_values()
@@ -175,10 +222,6 @@ def on_click_load_indicators():
                     st.session_state['sv_emaB'] = True if 'EMA_B' in ema_params else False
                     st.session_state['sv_emaC'] = True if 'EMA_C' in ema_params else False
                     st.session_state['sv_emaD'] = True if 'EMA_D' in ema_params else False
-                    st.session_state['sv_emaE'] = True if 'EMA_E' in ema_params else False
-                    st.session_state['sv_emaF'] = True if 'EMA_F' in ema_params else False
-                    st.session_state['sv_emaG'] = True if 'EMA_G' in ema_params else False
-                    st.session_state['sv_emaH'] = True if 'EMA_H' in ema_params else False
                     vwap_params = indicators_dict['vwap']
 
 def on_change_emaA():
@@ -192,18 +235,6 @@ def on_change_emaC():
 
 def on_change_emaD():
     st.session_state['sv_emaD'] = st.session_state['emaD']
-
-def on_change_emaE():
-    st.session_state['sv_emaE'] = st.session_state['emaE']
-
-def on_change_emaF():
-    st.session_state['sv_emaF'] = st.session_state['emaF']
-
-def on_change_emaG():
-    st.session_state['sv_emaG'] = st.session_state['emaG']
-
-def on_change_emaH():
-    st.session_state['sv_emaH'] = st.session_state['emaH']
 
 
 # 관심종목 등록
@@ -238,20 +269,13 @@ def main():
     stock_name = "삼성전자"
     stocknames = None
     stock = None
-    interval = Interval.in_15_minute
 
     global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
     global stocklist_df, selected_stockname, selected_minutes
 
-    task_name = "get_algo_stocks_increase10"
-    params = {}
-    respose = dc.fetch_result_from_remote_server(task_name, params)
-    if "return" in respose:
-        if "result" in respose["return"]:
-            if respose["return"]["result"] == "success":
-                stocklist_df = pd.DataFrame(respose["return"]["data"])
-                if stocklist_df is not None:
-                    stocknames = stocklist_df['name'].tolist()
+    idt, i10dt, vdt, pattern = None, None, None, None
+    data_count = None
+    interval = Interval.in_15_minute
 
     with st.container():
 
@@ -263,81 +287,85 @@ def main():
         col1, col2, col3, col4, col5, col6 = st.columns(6)
         
         with col1:
-            if stocknames:
-                selected_stockname = st.selectbox('주식종목 선택', stocknames, key="stock", on_change=on_change_stock)
-                if selected_stockname:
-                    stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'code']].values
-                    stock_code = stock[0][1]+"."+stock[0][0]
-                    stock_code_only = stock[0][1]
-                    stock_name = selected_stockname
-                    stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'idt', 'i10dt', 'vdt', 'pattern']].values
-                    market, idt, i10dt, vdt, pattern = stock[0][0], stock[0][1], stock[0][2], stock[0][3], stock[0][4]
+            detected_dates = get_detected_dates(year_from=2024, month_from=6, day_from=1)
+            selected_idt = st.selectbox(label="탐지일 선택", options=detected_dates, key="d_dates")
 
         with col2:
-            col21, col22 = st.columns(2)
-            with col21:
-                ema_A_length = 10 if col21.toggle(label="10", key="emaA", value=emaA, on_change=on_change_emaA) else 0
-                ema_B_length = 15 if col21.toggle(label="15", key="emaB", value=emaB, on_change=on_change_emaB) else 0
-            with col22:
-                ema_C_length = 21 if col22.toggle(label="21", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                ema_D_length = 33 if col22.toggle(label="33", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+            if selected_idt:
+                success, stocknames, stocklist_df = get_detected_stocks(idt = selected_idt)
+                if success:
+                    selected_stockname = st.selectbox('주식종목 선택', stocknames, key="stock", on_change=on_change_stock)
+                    if selected_stockname:
+                        stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'code']].values
+                        stock_code = stock[0][1]+"."+stock[0][0]
+                        stock_code_only = stock[0][1]
+                        stock_name = selected_stockname
+                        stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'idt', 'i10dt', 'vdt', 'pattern']].values
+                        market, idt, i10dt, vdt, pattern = stock[0][0], stock[0][1], stock[0][2], stock[0][3], stock[0][4]
 
         with col3:
             col31, col32 = st.columns(2)
-            with col31:
-                ema_E_length = 66 if col31.toggle(label="66", key="emaE", value=emaE, on_change=on_change_emaE) else 0
-                ema_F_length = 112 if col31.toggle(label="112", key="emaF", value=emaF, on_change=on_change_emaF) else 0
-            with col32:
-                ema_G_length = 224 if col32.toggle(label="224", key="emaG", value=emaG, on_change=on_change_emaG) else 0            
-                ema_H_length = 448 if col32.toggle(label="448", key="emaH", value=emaH, on_change=on_change_emaH) else 0
+            if selected_stockname:
+                with col31:
+                    ema_A_length = 10 if col31.toggle(label="10", key="emaA", value=emaA, on_change=on_change_emaA) else 0
+                    ema_B_length = 15 if col31.toggle(label="15", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                with col32:
+                    ema_C_length = 21 if col32.toggle(label="21", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 33 if col32.toggle(label="33", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
                 #dt = datetime.strptime(vdt, "%Y%m%d")
                 #string_date = dt.strftime('%Y-%m-%d')
-                st.text_input('조검검색', value=pattern, disabled=True, key="valley_date")
+                if pattern:
+                    st.text_input('조검검색', value=pattern, disabled=True, key="valley_date")
             with col42:
-                dt = datetime.strptime(i10dt, "%Y%m%d")
-                string_date = dt.strftime('%Y-%m-%d')
-                st.text_input('장대양봉일', value=string_date, disabled=True, key="increase10_date")
+                if i10dt:
+                    dt = datetime.strptime(i10dt, "%Y%m%d")
+                    string_date = dt.strftime('%Y-%m-%d')
+                    st.text_input('장대양봉일', value=string_date, disabled=True, key="increase10_date")
         with col5:
             col51, col52 = st.columns(2)
             with col51:
-                dt = datetime.strptime(idt, "%Y%m%d")
-                string_date = dt.strftime('%Y-%m-%d')
-                st.text_input('탐지일', value=string_date, disabled=True, key="detected_date")
+                if idt:
+                    dt = datetime.strptime(idt, "%Y%m%d")
+                    string_date = dt.strftime('%Y-%m-%d')
+                    st.text_input('탐지일', value=string_date, disabled=True, key="detected_date")
         with col6:
             col61, col62 = st.columns(2)
             with col61:
-                vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
-                today = datetime.now(pytz.timezone('Asia/Seoul'))
-                vdt_one_week_ago = vdt_date - timedelta(days=0)
-                days_difference = (today - vdt_one_week_ago).days
-                selected_minutes = st.selectbox('분봉 선택', index=2, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
-                if selected_minutes:
-                    if selected_minutes == '1분':
-                        data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
-                        interval = Interval.in_1_minute
-                    elif selected_minutes == '3분':
-                        data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
-                        interval = Interval.in_3_minute
-                    elif selected_minutes == '5분':
-                        data_count = days_difference * 90  # 5분봉 기준 1시간: 12개, 7.5시간: 90
-                        interval = Interval.in_5_minute
-                    elif selected_minutes == '15분':
-                        data_count = days_difference * 30  # 15분봉 기준 1시간: 4개, 7.5시간: 30
-                        interval = Interval.in_15_minute
-                    elif selected_minutes == '30분':
-                        data_count = days_difference * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
-                        interval = Interval.in_30_minute
-                    elif selected_minutes == '1시간':
-                        data_count = days_difference * 8 * 3 # 1시간 기준 1시간: 1개, 7.5시간: 8
-                        interval = Interval.in_1_hour
-                    elif selected_minutes == '1일':
-                        data_count = days_difference * 5  # 1일 기준, 1개
-                        interval = Interval.in_daily
+                if vdt:
+                    vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
+                    today = datetime.now(pytz.timezone('Asia/Seoul'))
+                    vdt_one_week_ago = vdt_date - timedelta(days=0)
+                    days_difference = (today - vdt_one_week_ago).days
+                    selected_minutes = st.selectbox('분봉 선택', index=2, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
+                    if selected_minutes:
+                        if selected_minutes == '1분':
+                            data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
+                            interval = Interval.in_1_minute
+                        elif selected_minutes == '3분':
+                            data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
+                            interval = Interval.in_3_minute
+                        elif selected_minutes == '5분':
+                            data_count = days_difference * 90  # 5분봉 기준 1시간: 12개, 7.5시간: 90
+                            interval = Interval.in_5_minute
+                        elif selected_minutes == '15분':
+                            data_count = days_difference * 30  # 15분봉 기준 1시간: 4개, 7.5시간: 30
+                            interval = Interval.in_15_minute
+                        elif selected_minutes == '30분':
+                            data_count = days_difference * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
+                            interval = Interval.in_30_minute
+                        elif selected_minutes == '1시간':
+                            data_count = days_difference * 8 * 3 # 1시간 기준 1시간: 1개, 7.5시간: 8
+                            interval = Interval.in_1_hour
+                        elif selected_minutes == '1일':
+                            data_count = days_difference * 5  # 1일 기준, 1개
+                            interval = Interval.in_daily
 
- 
+        if data_count is None:
+            return
+        
         # for index, row in stocklist_df.iterrows():
 
         #     market, idt, i10dt, vdt, pattern = row['market'], row['idt'], row['i10dt'], row['vdt'], row['pattern']
@@ -392,10 +420,6 @@ def main():
         if len_df <= ema_B_length: ema_B_length = 0
         if len_df <= ema_C_length: ema_C_length = 0
         if len_df <= ema_D_length: ema_D_length = 0
-        if len_df <= ema_E_length: ema_E_length = 0
-        if len_df <= ema_F_length: ema_F_length = 0
-        if len_df <= ema_G_length: ema_G_length = 0
-        if len_df <= ema_H_length: ema_H_length = 0
         
         ema_param = {}
         if ema_A_length > 0:
@@ -406,14 +430,6 @@ def main():
             ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 1}})
         if ema_D_length > 0:
             ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 1}})
-        if ema_E_length > 0:
-            ema_param.update({'EMA_E': {'length': ema_E_length, 'color': 'green', 'linewidth': 1}})
-        if ema_F_length > 0:
-            ema_param.update({'EMA_F': {'length': ema_F_length, 'color': 'orange', 'linewidth': 1}})
-        if ema_G_length > 0:
-            ema_param.update({'EMA_G': {'length': ema_G_length, 'color': 'black', 'linewidth': 1}})
-        if ema_H_length > 0:
-            ema_param.update({'EMA_H': {'length': ema_H_length, 'color': 'gray', 'linewidth': 1}})
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
