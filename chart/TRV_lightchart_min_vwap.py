@@ -200,6 +200,7 @@ def string_datetime_to_timestamp(value):
 def get_stock_chart(symbol
                    , dataframe
                    , vwap_dataframe
+                   , bollinger_dataframe
                    , indicators_params={}
                    , pane_name="multipane"
                    , time_minspacing=8
@@ -271,36 +272,49 @@ def get_stock_chart(symbol
     seriesMultipaneChart.append(get_series_line_string(title=f"ZIGZAG", data=zigzag_line_data, color="black", linewidth=2, pane=0))
 
     # VWAP
-    vwap_dataframe = vwap_dataframe.reset_index()
-    vwap_dataframe['time'] = vwap_dataframe['time'].apply(string_datetime_to_timestamp)
+    if vwap_dataframe is not None and not vwap_dataframe.empty:
+        vwap_dataframe = vwap_dataframe.reset_index()
+        vwap_dataframe['time'] = vwap_dataframe['time'].apply(string_datetime_to_timestamp)
 
-    vwap_vwap_df = vwap_dataframe[['time', 'vwap']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP", data=vwap_vwap_df, color="green", linewidth=2, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std1p']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std1p")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD1P", data=vwap_vwap_df, color="darkcyan", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std1m']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std1m")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD1M", data=vwap_vwap_df, color="darkcyan", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std2p']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std2p")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD2P", data=vwap_vwap_df, color="olive", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std2m']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std2m")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD2M", data=vwap_vwap_df, color="olive", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std3p']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std3p")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD3P", data=vwap_vwap_df, color="darkgreen", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std3m']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std3m")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD3M", data=vwap_vwap_df, color="darkgreen", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std4p']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std4p")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD4P", data=vwap_vwap_df, color="darkolivegreen", linewidth=1, pane=0))
-    vwap_vwap_df = vwap_dataframe[['time', 'std4m']]
-    vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std4m")
-    seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD4M", data=vwap_vwap_df, color="darkolivegreen", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'vwap']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP", data=vwap_vwap_df, color="green", linewidth=2, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std1p']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std1p")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD1P", data=vwap_vwap_df, color="darkcyan", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std1m']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std1m")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD1M", data=vwap_vwap_df, color="darkcyan", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std2p']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std2p")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD2P", data=vwap_vwap_df, color="olive", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std2m']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std2m")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD2M", data=vwap_vwap_df, color="olive", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std3p']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std3p")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD3P", data=vwap_vwap_df, color="darkgreen", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std3m']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std3m")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD3M", data=vwap_vwap_df, color="darkgreen", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std4p']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std4p")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD4P", data=vwap_vwap_df, color="darkolivegreen", linewidth=1, pane=0))
+        vwap_vwap_df = vwap_dataframe[['time', 'std4m']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std4m")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD4M", data=vwap_vwap_df, color="darkolivegreen", linewidth=1, pane=0))
+
+    # 볼린저밴드
+    if bollinger_dataframe is not None and not bollinger_dataframe.empty:
+        bollinger_dataframe = bollinger_dataframe.reset_index()
+        bollinger_dataframe['time'] = bollinger_dataframe['time'].apply(string_datetime_to_timestamp)
+
+        bl_df = bollinger_dataframe[['time', 'BL_std4p']]
+        bl_df = convertDataToJSON(bl_df, "BL_std4p")
+        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4P", data=bl_df, color="darkblue", linewidth=1, pane=0))
+        bl_df = bollinger_dataframe[['time', 'BL_std4m']]
+        bl_df = convertDataToJSON(bl_df, "BL_std4m")
+        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4M", data=bl_df, color="darkblue", linewidth=1, pane=0))
 
     chartMultipaneOptions = [
         {
