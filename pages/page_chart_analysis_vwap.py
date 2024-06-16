@@ -17,6 +17,7 @@ from middleware import md_client as dc
 from tvDatafeed import TvDatafeed, Interval
 
 global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
+global BB
 
 global stocklist_df, selected_stockname
 stocklist_df = {}
@@ -167,8 +168,33 @@ def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_da
         print("Error in anchored_vwap_to_database: ", e)
         return False, None
 
+def calculate_bollinger_bands(price_df, window=20, multiplier2=1.0, multiplier4=2.0):
+    try:
+        # Calculate rolling mean and standard deviation
+        rolling_mean = price_df['close'].rolling(window=window).mean()
+        rolling_std = price_df['close'].rolling(window=window).std()
 
+        # Calculate Bollinger Bands
+        std2p = rolling_mean + multiplier2 * rolling_std
+        std2m = rolling_mean - multiplier2 * rolling_std
+        std4p = rolling_mean + multiplier4 * rolling_std
+        std4m = rolling_mean - multiplier4 * rolling_std
 
+        # Create a new DataFrame to store Bollinger Bands data
+        bollinger_bands = price_df.copy()
+        bollinger_bands['BL_middle'] = rolling_mean
+        bollinger_bands['BL_std2p'] = std2p
+        bollinger_bands['BL_std2m'] = std2m
+        bollinger_bands['BL_std4p'] = std4p
+        bollinger_bands['BL_std4m'] = std4m
+
+        bollinger_bands.dropna(inplace=True)
+
+        return True, bollinger_bands
+
+    except Exception as e:
+        print("Error in calculate_bollinger_bands: ", e)
+        return False, None
 
 # 초기화 : session 에 control값을 대신하는 sv로 시작하는 key 값이 있는 경우(클릭 등의 이벤트로 화면이 갱신되는 경우) session 에서 값을 읽어서 global 변수를 채운다. -> 각 control 값은 global 변수로 다시 세팅
 # 각 control 의 key값으로 control에 직접 접근하지 않고, sv_key값에 복사하여 session 에 저장하고 page 를 재구성할 때 sv_key값을 control 의 value 로 입력해서 contorl을 관리
@@ -179,11 +205,14 @@ def init_session_control_values():
     one_month_ago = datetime.today() - timedelta(days=30)
 
     global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
+    global BB
 
     emaA = False if 'sv_emaA' not in st.session_state else st.session_state['sv_emaA']
     emaB = False if 'sv_emaB' not in st.session_state else st.session_state['sv_emaB']
     emaC = False if 'sv_emaC' not in st.session_state else st.session_state['sv_emaC']
     emaD = False if 'sv_emaD' not in st.session_state else st.session_state['sv_emaD']
+
+    BB = False if 'sv_BB' not in st.session_state else st.session_state['sv_BB']
 
 
 def clear_session_control_values():
@@ -236,6 +265,9 @@ def on_change_emaC():
 def on_change_emaD():
     st.session_state['sv_emaD'] = st.session_state['emaD']
 
+def on_change_BB():
+    st.session_state['sv_BB'] = st.session_state['BB']
+
 
 # 관심종목 등록
 def on_click_save_stock_insterest():
@@ -256,6 +288,10 @@ def on_click_save_stock_insterest():
 
 def main():
 
+    global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
+    global BB
+    global stocklist_df, selected_stockname, selected_minutes
+
     st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
     ss.check_session(current_page)
     sb.menu_with_redirect()
@@ -270,8 +306,8 @@ def main():
     stocknames = None
     stock = None
 
-    global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
-    global stocklist_df, selected_stockname, selected_minutes
+    ema_A_length, ema_B_length, ema_C_length, ema_D_length = 0, 0, 0, 0
+    bollinger_ma = 0
 
     idt, i10dt, vdt, pattern = None, None, None, None
     data_count = None
@@ -307,11 +343,12 @@ def main():
             col31, col32 = st.columns(2)
             if selected_stockname:
                 with col31:
-                    ema_A_length = 10 if col31.toggle(label="10", key="emaA", value=emaA, on_change=on_change_emaA) else 0
-                    ema_B_length = 15 if col31.toggle(label="15", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                    ema_A_length = 10 if col31.toggle(label="10 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
+                    ema_B_length = 15 if col31.toggle(label="15 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                    pass
                 with col32:
-                    ema_C_length = 21 if col32.toggle(label="21", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 33 if col32.toggle(label="33", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+                    ema_C_length = 21 if col32.toggle(label="21 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 33 if col32.toggle(label="33 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
@@ -362,6 +399,27 @@ def main():
                         elif selected_minutes == '1일':
                             data_count = days_difference + 25  # 1일 기준, 1개
                             interval = Interval.in_daily
+            with col62:
+                dummy_ma = 0 if col62.toggle(label="00 BB", key="DM", disabled=True, label_visibility="hidden") else 0
+                bollinger_ma = 33 if col62.toggle(label="33 BB", key="BB", value=BB, on_change=on_change_BB) else 0
+                if interval == Interval.in_1_minute:
+                    bollinger_ma = int(bollinger_ma * 5 / 1)
+                elif interval == Interval.in_3_minute:
+                    bollinger_ma = int(bollinger_ma * 5 / 3)
+                elif interval == Interval.in_5_minute:
+                    bollinger_ma = int(bollinger_ma * 5 / 5)
+                elif interval == Interval.in_15_minute:
+                    bollinger_ma = int(bollinger_ma * 5 / 15)
+                elif interval == Interval.in_30_minute:
+                    if bollinger_ma > 0:
+                        bollinger_ma = 20
+                elif interval == Interval.in_1_hour:
+                    if bollinger_ma > 0:
+                        bollinger_ma = 10
+                elif interval == Interval.in_daily:
+                    if bollinger_ma > 0:
+                        bollinger_ma = 5
+
 
         if data_count is None:
             return
@@ -379,7 +437,8 @@ def main():
         #df.index.name = "Date"
 
         # 1. Tradingview 에서 과거 분봉데이터 가져오기
-        df = pd.DataFrame()
+        vwap_df = pd.DataFrame()
+        bollinger_df = pd.DataFrame()
         tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
         if not tvdata.empty:
 
@@ -393,20 +452,31 @@ def main():
             valley_string_datetime = vdt + "000000"
             price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
 
-            # 2. vwap 계산 후 DB에 저장
-            success, vwap_df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
+            # 2. vwap 계산 후 return
+            success, df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
                                                                    increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
             if success:
-                vwap_df.drop(columns=['symbol'], inplace=True)
-                vwap_df.reset_index(inplace=True)
-                del vwap_df['time']
-                vwap_df.rename(columns={'datetime':'time'}, inplace=True)
-                vwap_df['time'] = vwap_df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
-                vwap_df.set_index('time', inplace=True)
-                df = vwap_df
+                df.drop(columns=['symbol'], inplace=True)
+                df.reset_index(inplace=True)
+                del df['time']
+                df.rename(columns={'datetime':'time'}, inplace=True)
+                df['time'] = df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
+                df.set_index('time', inplace=True)
+                vwap_df = df
 
                 with col52:
                     st.text_input('밴드갭', value=f"{band_gap}%", disabled=True, key="band_gap")
+
+            # 3. Bollinger band 계산 후 return
+            success, bollinger_df = calculate_bollinger_bands(price_df=price_df, window=bollinger_ma, multiplier2=multiplier2, multiplier4=multiplier4)
+            if success:
+                bollinger_df.drop(columns=['symbol'], inplace=True)
+                bollinger_df.reset_index(inplace=True)
+                del bollinger_df['time']
+                bollinger_df.rename(columns={'datetime':'time'}, inplace=True)
+                bollinger_df['time'] = bollinger_df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
+                bollinger_df.set_index('time', inplace=True)
+                #print(bollinger_df)
 
             tvdata.drop(columns=['symbol'], inplace=True)
             tvdata.reset_index(inplace=True)
@@ -420,6 +490,7 @@ def main():
         if len_df <= ema_B_length: ema_B_length = 0
         if len_df <= ema_C_length: ema_C_length = 0
         if len_df <= ema_D_length: ema_D_length = 0
+        if len_df <= bollinger_ma: bollinger_ma = 0
         
         ema_param = {}
         if ema_A_length > 0:
@@ -440,7 +511,8 @@ def main():
         show_volume = False
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=tvdata
-                                                , vwap_dataframe=df
+                                                , vwap_dataframe=vwap_df
+                                                , bollinger_dataframe=bollinger_df
                                                 , indicators_params=indicators_params
                                                 , pane_name="pane_daily"
                                                 , time_minspacing=3

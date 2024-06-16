@@ -15,7 +15,6 @@ from util import trvta as tt
 
 global grid1
 
-
 def display_search_results():
 
     # Your code to display search results in ag-Grid
