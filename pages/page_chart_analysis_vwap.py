@@ -343,8 +343,8 @@ def main():
             col31, col32 = st.columns(2)
             if selected_stockname:
                 with col31:
-                    ema_A_length = 10 if col31.toggle(label="10 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
-                    ema_B_length = 15 if col31.toggle(label="15 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                    ema_A_length = 5 if col31.toggle(label="5 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
+                    ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
                     pass
                 with col32:
                     ema_C_length = 21 if col32.toggle(label="21 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
@@ -400,25 +400,26 @@ def main():
                             data_count = days_difference + 25  # 1일 기준, 1개
                             interval = Interval.in_daily
             with col62:
-                dummy_ma = 0 if col62.toggle(label="00 BB", key="DM", disabled=True, label_visibility="hidden") else 0
-                bollinger_ma = 33 if col62.toggle(label="33 BB", key="BB", value=BB, on_change=on_change_BB) else 0
-                if interval == Interval.in_1_minute:
-                    bollinger_ma = int(bollinger_ma * 5 / 1)
-                elif interval == Interval.in_3_minute:
-                    bollinger_ma = int(bollinger_ma * 5 / 3)
-                elif interval == Interval.in_5_minute:
-                    bollinger_ma = int(bollinger_ma * 5 / 5)
-                elif interval == Interval.in_15_minute:
-                    bollinger_ma = int(bollinger_ma * 5 / 15)
-                elif interval == Interval.in_30_minute:
-                    if bollinger_ma > 0:
-                        bollinger_ma = 20
-                elif interval == Interval.in_1_hour:
-                    if bollinger_ma > 0:
-                        bollinger_ma = 10
-                elif interval == Interval.in_daily:
-                    if bollinger_ma > 0:
-                        bollinger_ma = 5
+                if selected_stockname:
+                    dummy_ma = 0 if col62.toggle(label="00 BB", key="DM", disabled=True, label_visibility="hidden") else 0
+                    bollinger_ma = 33 if col62.toggle(label="33 BB", key="BB", value=BB, on_change=on_change_BB) else 0
+                    if interval == Interval.in_1_minute:
+                        bollinger_ma = int(bollinger_ma * 5 / 1)
+                    elif interval == Interval.in_3_minute:
+                        bollinger_ma = int(bollinger_ma * 5 / 3)
+                    elif interval == Interval.in_5_minute:
+                        bollinger_ma = int(bollinger_ma * 5 / 5)
+                    elif interval == Interval.in_15_minute:
+                        bollinger_ma = int(bollinger_ma * 5 / 15)
+                    elif interval == Interval.in_30_minute:
+                        if bollinger_ma > 0:
+                            bollinger_ma = 20
+                    elif interval == Interval.in_1_hour:
+                        if bollinger_ma > 0:
+                            bollinger_ma = 10
+                    elif interval == Interval.in_daily:
+                        if bollinger_ma > 0:
+                            bollinger_ma = 5
 
 
         if data_count is None:
@@ -494,13 +495,13 @@ def main():
         
         ema_param = {}
         if ema_A_length > 0:
-            ema_param.update({'EMA_A': {'length': ema_A_length, 'color': 'royalblue', 'linewidth': 1}})
+            ema_param.update({'EMA_A': {'length': ema_A_length, 'color': 'royalblue', 'linewidth': 2}})
         if ema_B_length > 0:
-            ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 1}})
+            ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 2}})
         if ema_C_length > 0:
-            ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 1}})
+            ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 2}})
         if ema_D_length > 0:
-            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 1}})
+            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 2}})
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
