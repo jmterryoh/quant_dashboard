@@ -311,10 +311,10 @@ def get_stock_chart(symbol
 
         bl_df = bollinger_dataframe[['time', 'BL_std4p']]
         bl_df = convertDataToJSON(bl_df, "BL_std4p")
-        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4P", data=bl_df, color="darkblue", linewidth=1, pane=0))
+        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4P", data=bl_df, color="darkblue", linewidth=2, pane=0))
         bl_df = bollinger_dataframe[['time', 'BL_std4m']]
         bl_df = convertDataToJSON(bl_df, "BL_std4m")
-        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4M", data=bl_df, color="darkblue", linewidth=1, pane=0))
+        seriesMultipaneChart.append(get_series_line_string(title=f"BL_STD4M", data=bl_df, color="darkblue", linewidth=2, pane=0))
 
     chartMultipaneOptions = [
         {
