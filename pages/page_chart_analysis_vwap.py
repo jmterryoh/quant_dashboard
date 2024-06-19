@@ -38,6 +38,7 @@ def get_detected_dates(year_from, month_from, day_from):
 
     # 오늘 날짜 설정 (한국 시간대)
     end_date = datetime.now(korea_timezone)
+    current_time = datetime.now(korea_timezone).strftime("%H%M%S")
 
     # 시작 날짜 설정
     start_date = korea_timezone.localize(datetime(year_from, month_from, day_from))
@@ -63,7 +64,11 @@ def get_detected_dates(year_from, month_from, day_from):
     while current_date <= end_date:
         # 주말이 아니고 공휴일이 아닌 경우
         if current_date.weekday() < 5 and current_date not in korean_holidays:
-            business_days.append(current_date.strftime("%Y%m%d"))
+            print(current_date, end_date, current_time)
+            if current_date.date() == end_date.date() and current_time <= "160500":
+                pass
+            else:
+                business_days.append(current_date.strftime("%Y%m%d"))
         current_date += timedelta(days=1)
 
     # 날짜 목록을 내림차순으로 정렬하고 상위 20개 추출
