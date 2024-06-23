@@ -352,8 +352,8 @@ def main():
                     ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
                     pass
                 with col32:
-                    ema_C_length = 21 if col32.toggle(label="21 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 33 if col32.toggle(label="33 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+                    ema_C_length = 33 if col32.toggle(label="33 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 45 if col32.toggle(label="45 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
