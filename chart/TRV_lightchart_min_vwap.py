@@ -7,6 +7,12 @@ import time
 from datetime import datetime
 import pytz
 
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from util import zigzag as zz
+
+
 #COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
 #COLOR_BEAR = 'rgba(239,83,80,0.9)'  # #ef5350
 COLOR_BULL = 'rgba(231,25,9,0.8)' # #26a69a
@@ -29,40 +35,6 @@ def convertDataToJSON(df, column):
     data = data.rename(columns={column: "value"})
     return json.loads(data.to_json(orient="records"))
 
-
-# Input : df = Dataframe(['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
-#         anchor_date = anchord datetime
-#         multiplier1 = vwap band 1
-#         multiplier2 = vwap band 2 
-# Output : Dataframe(['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'VWAP', 'STD+1', 'STD-1', 'STD+2', 'STD-2'])
-def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2, vwap_color):    
-    # Use .loc[] to avoid setting values on a slice of DataFrame
-    df1 = df.loc[df.index >= anchor_date].copy()
-
-    # VWAP Formula : ACC (Close * Volume) / ACC (Volume)
-    data = pd.DataFrame({
-        'Close': df1['Close'],  # Close value base
-        'Volume': df1['Volume'],
-        'TP': (df1['Close'] * df1['Volume']),
-        vwap_name: (df1['Close'] * df1['Volume']).cumsum() / df1['Volume'].cumsum()
-    })
-    df1[vwap_name] = data[vwap_name]
-
-    if multiplier1 is not None or multiplier2 is not None:
-        # data['TPP'] = (df1['Close'] * df1['Close'] * df1['Volume']).cumsum() / df1['Volume'].cumsum()
-        # STD Formula : sqrt( (ACC(Close X Close * Volume) / ACC(Volume)) - VWAP * VWAP )
-        # multiple 1: 1.28, mutiple 2: 2.01, multiple 3: 2.51
-        data['TPP'] = (data['Close'] * data['TP']).cumsum() / data['Volume'].cumsum() # Volume!! 
-        data['VW2'] = data[vwap_name] * data[vwap_name]
-        data['STD'] = (data['TPP'] - data['VW2']) ** 0.5
-        if multiplier1 is not None:
-            df1.loc[:, 'STD+1'] = data[vwap_name] + data['STD'] * multiplier1
-            df1.loc[:, 'STD-1'] = data[vwap_name] - data['STD'] * multiplier1
-        if multiplier2 is not None:
-            df1.loc[:, 'STD+2'] = data[vwap_name] + data['STD'] * multiplier2
-            df1.loc[:, 'STD-2'] = data[vwap_name] - data['STD'] * multiplier2
-
-    return df1, vwap_color
 
 def get_candlestick_string(title, data=None, pane=0):
     return {
@@ -125,70 +97,6 @@ def set_vwap_indicators(series, indicators):
 
     return series
 
-#def calculate_zigzag(close_prices, thresholds):
-def calculate_zigzag(close_prices):
-    pivot_points = []
-    current_peak = float('-inf')
-    current_valley = float('inf')
-    current_pivot_type = None
-
-    for i in range(len(close_prices) - 1):
-        current_close = close_prices[i]
-        next_close = close_prices[i + 1]
-
-        if current_pivot_type is None:
-            current_peak = current_valley = current_close
-            current_peak_i = current_valley_i = i
-            current_pivot_type = 'peak' if current_close > next_close else 'valley'
-        elif current_pivot_type == 'peak':
-            if current_close >= current_peak:
-                current_peak_i = i
-                current_peak = current_close
-            elif current_close < current_peak:# - thresholds[min(i, len(thresholds)-1)]:
-                pivot_points.append((current_peak_i, current_peak, 'peak'))
-                current_valley_i = i
-                current_valley = current_close
-                current_pivot_type = 'valley'
-        elif current_pivot_type == 'valley':
-            if current_close <= current_valley:
-                current_valley_i = i
-                current_valley = current_close
-            elif current_close > current_valley:# + thresholds[min(i, len(thresholds)-1)]:
-                pivot_points.append((current_valley_i, current_valley, 'valley'))
-                current_peak_i = i
-                current_peak = current_close
-                current_pivot_type = 'peak'
-    pivot_points.append((i, close_prices[i], 'last'))
-
-    return pivot_points
-
-def get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01):
-
-    # Close values 
-    stock_prices = dataframe['close'].values
-    dates = dataframe.index
-
-    # Set the number of periods for calculating the standard deviation
-    # Calculate the rolling standard deviation of close prices
-    #rolling_std = np.std([stock_prices[i-window_size:i] for i in range(window_size, len(stock_prices))], axis=1)
-
-    # Set threshold dynamically based on rolling standard deviation
-    #thresholds = rolling_std * std_threshold
-
-    # Calculate Zigzag pivot points
-    #zigzag_pivots = calculate_zigzag(stock_prices, thresholds)
-    zigzag_pivots = calculate_zigzag(stock_prices)
-
-    zigzag_lines_data = []
-    for pivot in zigzag_pivots:
-        zigzag_lines_data.append({"time": dates[pivot[0]], "value": pivot[1]})
-    # 마지막 pivot 값 추가
-    #zigzag_lines_data.append({"time": dates[pivot[2]], "value": pivot[3]})
-    # 마지막 time, value 값 추가
-    zigzag_lines_data.append({"time":dataframe.index[-1], "value":dataframe.iloc[-1]['close']})
-
-    return pd.DataFrame(zigzag_lines_data)
-
 
 def string_datetime_to_timestamp(value):
     dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
@@ -200,6 +108,7 @@ def string_datetime_to_timestamp(value):
 def get_stock_chart(symbol
                    , dataframe
                    , vwap_dataframe
+                   , vwap_1day_dataframe
                    , bollinger_dataframe
                    , indicators_params={}
                    , pane_name="multipane"
@@ -264,7 +173,7 @@ def get_stock_chart(symbol
     # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
     # ZigZag
-    zigzag_data = get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01)
+    zigzag_data = zz.get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
     zigzag_data = zigzag_data.reset_index()
     #zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d %H:%M:%S')   
@@ -303,6 +212,15 @@ def get_stock_chart(symbol
         vwap_vwap_df = vwap_dataframe[['time', 'std4m']]
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "std4m")
         seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_STD4M", data=vwap_vwap_df, color="darkolivegreen", linewidth=1, pane=0))
+
+
+    # 직전저점 기준 일봉 VWAP
+    if vwap_1day_dataframe is not None and not vwap_1day_dataframe.empty:
+        vwap_1day_dataframe['time'] = vwap_1day_dataframe['time'].apply(string_datetime_to_timestamp)
+        vwap_vwap_df = vwap_1day_dataframe[['time', 'vwap']]
+        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_1D", data=vwap_vwap_df, color="red", linewidth=2, pane=0))
+
 
     # 볼린저밴드
     if bollinger_dataframe is not None and not bollinger_dataframe.empty:
