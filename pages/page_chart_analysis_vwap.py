@@ -7,6 +7,7 @@ import pytz
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import session as ss
 from util import screen as sc
+from util import zigzag as zz
 from pages import sidebar as sb
 from datetime import datetime, timedelta
 from chart import TRV_lightchart_min_vwap as chart
@@ -64,7 +65,7 @@ def get_detected_dates(year_from, month_from, day_from):
     while current_date <= end_date:
         # 주말이 아니고 공휴일이 아닌 경우
         if current_date.weekday() < 5 and current_date not in korean_holidays:
-            print(current_date, end_date, current_time)
+            #print(current_date, end_date, current_time)
             if current_date.date() == end_date.date() and current_time <= "160500":
                 pass
             else:
@@ -291,6 +292,42 @@ def on_click_save_stock_insterest():
                                                     pattern="차트분석",
                                                     description="")
 
+# 직전 valley 일자를 찾는 함수
+def find_recent_valley_before_date(zigzag_df, input_date, days_before=90):
+    # input_date 형식 변환
+    target_date = datetime.strptime(str(input_date), '%Y%m%d').date()
+    
+    # 입력된 날짜의 value 찾기
+    target_value = None
+    zigzag_df = zigzag_df.iloc[::-1]
+    for index, row in zigzag_df.iterrows():
+        entry_date = row['time'].date()
+        if entry_date == target_date and row['pivot'] == 'valley':
+            target_value = row['value']
+            break
+    
+    # 해당 valley 값의 -1% 아래값
+    if target_value is None:
+        return None    
+    target_value = int(target_value * 0.99)
+
+    # 오늘 날짜 설정 (한국 시간대)
+    three_months_ago = target_date - timedelta(days=days_before)
+
+    # 입력된 날짜 이전의 가장 최근 valley의 날짜 찾기
+    recent_valley_date = None
+    for index, row in zigzag_df.iterrows():
+        entry_date = row['time'].date()
+        if three_months_ago <= entry_date < target_date and row['pivot'] == 'valley' and row['value'] < target_value:
+            recent_valley_date = entry_date
+            break
+    
+    if recent_valley_date is None:
+        return None
+
+    return recent_valley_date.strftime('%Y%m%d')
+
+
 def main():
 
     global emaA, emaB, emaC, emaD, emaE, emaF, emaG, emaH
@@ -510,6 +547,45 @@ def main():
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
+        # 직전저점 vwap
+        vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
+        today = datetime.now(pytz.timezone('Asia/Seoul'))
+        vdt_8_weeks_ago = vdt_date - timedelta(days=60)
+        days_difference = (today - vdt_8_weeks_ago).days
+        data_count = days_difference * 1
+
+        vwap_1day_df = pd.DataFrame()
+        price_1day_df = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=Interval.in_daily)
+        #print(price_1day_df)
+        #price_1day_df = yf.fetch_stock_data(symbol=stock_code, period="4mo", interval="1d")
+        if price_1day_df is not None and not price_1day_df.empty:
+            zigzag_df = zz.get_zigzag(price_1day_df)
+            if zigzag_df is not None and not zigzag_df.empty:
+                previous_vdt = find_recent_valley_before_date(zigzag_df, vdt)
+                if previous_vdt is None:
+                    previous_vdt = vdt
+
+            # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
+            if previous_vdt:
+                vwap_1day_df, vwap_color = zz.calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", 
+                                                                    multiplier1=multiplier2, multiplier2=multiplier4, vwap_color="red")
+                # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
+                vwap_1day_df = vwap_1day_df.reset_index()
+                # vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
+                # vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
+                vwap_1day_df = vwap_1day_df.rename(columns={'datetime': 'time'})
+                vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
+
+                # # 마지막 행 복제
+                # last_row = vwap_1day_df.iloc[-1:].copy()
+                # # 현재 시간에서 20분 이전의 시간 계산
+                # korea_timezone = pytz.timezone('Asia/Seoul')
+                # current_time = datetime.now(korea_timezone)
+                # last_row_time = current_time + timedelta(days=1)
+                # last_row.iloc[0, last_row.columns.get_loc('time')] = last_row_time.strftime('%Y-%m-%d %H:%M:%')
+                # vwap_1day_df = pd.concat([vwap_1day_df, last_row], ignore_index=True)
+                # #print(vwap_1day_df)
+
         # Save, Load button
         with col6:
             col61, col62 = st.columns(2)
@@ -518,6 +594,7 @@ def main():
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
+                                                , vwap_1day_dataframe = vwap_1day_df
                                                 , bollinger_dataframe=bollinger_df
                                                 , indicators_params=indicators_params
                                                 , pane_name="pane_daily"
