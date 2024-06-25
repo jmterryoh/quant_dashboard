@@ -5,6 +5,12 @@ import pandas as pd
 import pandas_ta as ta
 from streamlit_lightweight_charts_ntf import renderLightweightCharts
 
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from util import zigzag as zz
+
+
 #COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
 #COLOR_BEAR = 'rgba(239,83,80,0.9)'  # #ef5350
 COLOR_BULL = 'rgba(231,25,9,0.8)' # #26a69a
@@ -176,32 +182,6 @@ def calculate_zigzag(close_prices):
 
     # return filtered_pivot_points
 
-def get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01):
-
-    # Close values 
-    stock_prices = dataframe['Close'].values
-    dates = dataframe.index
-
-    # Set the number of periods for calculating the standard deviation
-    # Calculate the rolling standard deviation of close prices
-    #rolling_std = np.std([stock_prices[i-window_size:i] for i in range(window_size, len(stock_prices))], axis=1)
-
-    # Set threshold dynamically based on rolling standard deviation
-    #thresholds = rolling_std * std_threshold
-
-    # Calculate Zigzag pivot points
-    #zigzag_pivots = calculate_zigzag(stock_prices, thresholds)
-    zigzag_pivots = calculate_zigzag(stock_prices)
-
-    zigzag_lines_data = []
-    for pivot in zigzag_pivots:
-        zigzag_lines_data.append({"time": dates[pivot[0]], "value": pivot[1]})
-    # 마지막 pivot 값 추가
-    #zigzag_lines_data.append({"time": dates[pivot[2]], "value": pivot[3]})
-    # 마지막 time, value 값 추가
-    zigzag_lines_data.append({"time":dataframe.index[-1], "value":dataframe.iloc[-1]['Close']})
-
-    return pd.DataFrame(zigzag_lines_data)
 
 def get_stock_chart(symbol
                    , dataframe
@@ -266,7 +246,7 @@ def get_stock_chart(symbol
     seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
     # ZigZag
-    zigzag_data = get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01)
+    zigzag_data = zz.get_zigzag_lines(dataframe, base_price="Close", window_size=10, std_threshold=0.01)
     zigzag_data = zigzag_data.reset_index()
     zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d')   
     zigzag_line_data = convertDataToJSON(zigzag_data, "value")

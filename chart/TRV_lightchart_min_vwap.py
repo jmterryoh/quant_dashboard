@@ -173,7 +173,7 @@ def get_stock_chart(symbol
     # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
     # ZigZag
-    zigzag_data = zz.get_zigzag_lines(dataframe, window_size=10, std_threshold=0.01)
+    zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
     zigzag_data = zigzag_data.reset_index()
     #zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d %H:%M:%S')   
