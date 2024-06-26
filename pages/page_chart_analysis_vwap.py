@@ -154,18 +154,18 @@ def calculate_anchored_vwap(df, anchor_string_date, anchor_base, price_base, inc
 #         multiplier1 = vwap band 1
 #         multiplier2 = vwap band 2 
 # Output : Dataframe(['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'VWAP', 'STD+1', 'STD-1', 'STD+2', 'STD-2'])
-def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2, vwap_color):    
+def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2):    
     # Use .loc[] to avoid setting values on a slice of DataFrame
-    df1 = df.loc[df.index >= anchor_date].copy()
+    #df1 = df.loc[df.index >= anchor_date].copy()
 
     # VWAP Formula : ACC (Close * Volume) / ACC (Volume)
     data = pd.DataFrame({
-        'Close': df1['Close'],  # Close value base
-        'Volume': df1['Volume'],
-        'TP': (df1['Close'] * df1['Volume']),
-        vwap_name: (df1['Close'] * df1['Volume']).cumsum() / df1['Volume'].cumsum()
+        'Close': df['Close'],  # Close value base
+        'Volume': df['Volume'],
+        'TP': (df['Close'] * df['Volume']),
+        vwap_name: (df['Close'] * df['Volume']).cumsum() / df['Volume'].cumsum()
     })
-    df1[vwap_name] = data[vwap_name]
+    df[vwap_name] = data[vwap_name]
 
     if multiplier1 is not None or multiplier2 is not None:
         # data['TPP'] = (df1['Close'] * df1['Close'] * df1['Volume']).cumsum() / df1['Volume'].cumsum()
@@ -175,13 +175,13 @@ def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2, v
         data['VW2'] = data[vwap_name] * data[vwap_name]
         data['STD'] = (data['TPP'] - data['VW2']) ** 0.5
         if multiplier1 is not None:
-            df1.loc[:, 'STD+1'] = data[vwap_name] + data['STD'] * multiplier1
-            df1.loc[:, 'STD-1'] = data[vwap_name] - data['STD'] * multiplier1
+            df.loc[:, 'STD+1'] = data[vwap_name] + data['STD'] * multiplier1
+            df.loc[:, 'STD-1'] = data[vwap_name] - data['STD'] * multiplier1
         if multiplier2 is not None:
-            df1.loc[:, 'STD+2'] = data[vwap_name] + data['STD'] * multiplier2
-            df1.loc[:, 'STD-2'] = data[vwap_name] - data['STD'] * multiplier2
+            df.loc[:, 'STD+2'] = data[vwap_name] + data['STD'] * multiplier2
+            df.loc[:, 'STD-2'] = data[vwap_name] - data['STD'] * multiplier2
 
-    return df1, vwap_color
+    return df
 
 def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_date, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
     try:
@@ -531,7 +531,7 @@ def main():
 
             # 2. vwap 계산 후 return
             success, df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
-                                                                   increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
+                                                              increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
             if success:
                 df.drop(columns=['symbol'], inplace=True)
                 df.reset_index(inplace=True)
@@ -581,46 +581,37 @@ def main():
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
+        # 탐지일 이후 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
+        idt_string_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
+        price_idt_df = tvdata.loc[tvdata.index >= idt_string_datetime].copy()
+        price_idt_df.reset_index(inplace=True)
+        price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
+        price_idt_df.set_index('time', inplace=True)
+        price_idt_df.index.name = 'Date'
+        #print(price_idt_df)
+        
         # 직전저점 vwap
-        # vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
-        # today = datetime.now(pytz.timezone('Asia/Seoul'))
-        # vdt_8_weeks_ago = vdt_date - timedelta(days=60)
-        # days_difference = (today - vdt_8_weeks_ago).days
-        # data_count = days_difference * 1
-
-        # vwap_1day_df = pd.DataFrame()
-        # price_1day_df = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=Interval.in_daily)
-        # #print(price_1day_df)
-        # #price_1day_df = yf.fetch_stock_data(symbol=stock_code, period="4mo", interval="1d")
-        # if price_1day_df is not None and not price_1day_df.empty:
-        #     zigzag_df = zz.get_zigzag(price_1day_df, base_price="close")
-        #     if zigzag_df is not None and not zigzag_df.empty:
-        #         previous_vdt = find_recent_valley_before_date(zigzag_df, vdt)
-        #         if previous_vdt is None:
-        #             previous_vdt = vdt
         vwap_1day_df = pd.DataFrame()
         previous_vdt, price_1day_df = zz.get_previous_valley_date(stock_code=stock_code_only, vdt=vdt, base_price="Close", days_before=90)
 
         # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
         if previous_vdt:
-            vwap_1day_df, vwap_color = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", 
-                                                            multiplier1=multiplier2, multiplier2=multiplier4, vwap_color="red")
+            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index  < idt_string_datetime)].copy()
+            price_1day_df = price_1day_df.reset_index()
+            price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
+            price_1day_df.set_index('Date', inplace=True)
+            price_1day_df.drop(columns=['Change'], inplace=True)
+            price_1day_df = pd.concat([price_1day_df, price_idt_df])
+            #print(price_1day_df)
+
+
+            vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
             vwap_1day_df = vwap_1day_df.reset_index()
             # vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
             # vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
             vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
-            vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
-
-            # # 마지막 행 복제
-            # last_row = vwap_1day_df.iloc[-1:].copy()
-            # # 현재 시간에서 20분 이전의 시간 계산
-            # korea_timezone = pytz.timezone('Asia/Seoul')
-            # current_time = datetime.now(korea_timezone)
-            # last_row_time = current_time + timedelta(days=1)
-            # last_row.iloc[0, last_row.columns.get_loc('time')] = last_row_time.strftime('%Y-%m-%d %H:%M:%')
-            # vwap_1day_df = pd.concat([vwap_1day_df, last_row], ignore_index=True)
-            # #print(vwap_1day_df)
+            #vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
 
         # Save, Load button
         with col6:
