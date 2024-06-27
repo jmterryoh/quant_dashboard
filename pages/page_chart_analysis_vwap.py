@@ -581,9 +581,9 @@ def main():
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
-        # 탐지일 이후 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
-        idt_string_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
-        price_idt_df = tvdata.loc[tvdata.index >= idt_string_datetime].copy()
+        # 탐지일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
+        idt_string_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
+        price_idt_df = tvdata.loc[tvdata.index > idt_string_datetime].copy()
         price_idt_df.reset_index(inplace=True)
         price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
         price_idt_df.set_index('time', inplace=True)
@@ -596,7 +596,7 @@ def main():
 
         # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
         if previous_vdt:
-            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index  < idt_string_datetime)].copy()
+            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index  <= idt_string_datetime)].copy()
             price_1day_df = price_1day_df.reset_index()
             price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
             price_1day_df.set_index('Date', inplace=True)
