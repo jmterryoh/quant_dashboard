@@ -199,12 +199,30 @@ def get_algo_stock_increase10(code):
 
     return False, "Error: no return values"
 
-def insert_algo_stocks_increase10(uidx, idt, i10dt, vdt, market, code, name, pattern, description):
+def get_algo_stocks_increase10_snapshot_by_date(ssdt):
+    task_name = "get_algo_stocks_increase10_snapshot_by_date"
+    params = { 'ssdt': f'{ssdt}'  }
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                df = pd.DataFrame(respose["return"]["data"])
+                if len(df) > 0:
+                    return True, df
+                else:
+                    return False, "Error: no result values"
+            elif respose["return"]["result"] == "error":
+                return False, respose["return"]["data"]
+
+    return False, "Error: no return values"
+
+def insert_algo_stocks_increase10(uidx, idt, i10dt, vdt, pvdt, market, code, name, pattern, description):
     task_name = "insert_algo_stocks_increase10"
     params = {'uidx': uidx,
               'idt': f'{idt}',
               'i10dt': f'{i10dt}',
               'vdt': f'{vdt}',
+              'pvdt': f'{pvdt}',
               'market': f'{market}',
               'code': f'{code}',
               'name': f'{name}',
@@ -241,7 +259,7 @@ def delete_algo_stocks_increase10(uidx, market, code, i10dt, description):
     else:
         return False, "Error: no return values"
 
-def insert_algo_stock_for_buy(uidx, aidx, market, code, name, pattern, stoploss_price, effective_date, allocated_amount, algorithm_buy, algorithm_sell, description):
+def insert_algo_stock_for_buy(uidx, aidx, market, code, name, pattern, stoploss_price, buy_base, expected_buy_price, effective_date, allocated_amount, algorithm_buy, algorithm_sell, description):
     task_name = "insert_algo_stock_for_buy"
     params = {'uidx': int(uidx),
               'aidx': int(aidx),
@@ -250,6 +268,8 @@ def insert_algo_stock_for_buy(uidx, aidx, market, code, name, pattern, stoploss_
               'name': f"{name}",
               'pattern': f"{pattern}",
               'stoploss_price' : int(stoploss_price),
+              'buy_base' : f"{buy_base}",
+              'expected_buy_price' : int(expected_buy_price),
               'effective_date': f"{effective_date}",
               'allocated_amount': allocated_amount,
               'algorithm_buy': f"{algorithm_buy}",
@@ -439,6 +459,20 @@ def get_algo_stocklist_for_sell():
                     print("get_algo_stocklist_for_sell: None")
     return None, None
 
+def get_algo_stockcodes_for_sell():
+    task_name = "get_algo_stockcodes_for_sell"
+    params = {}
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                df = pd.DataFrame(respose["return"]["data"])
+                if len(df) > 0:
+                    return True, df
+                else:
+                    print("get_algo_stockcodes_for_sell: None")
+    return False, None
+
 def get_algo_stocks_for_buy(aidx):
     task_name = "get_algo_stocklist_for_buy"
     params = { 'aidx': aidx }
@@ -467,6 +501,51 @@ def get_algo_stocks_for_sell(aidx):
                     print("get_algo_stocks_for_sell: None")
     return False, None
 
+def get_log_program_execution():
+    task_name = "get_log_program_execution"
+    params = { }
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                df = pd.DataFrame(respose["return"]["data"])
+                if len(df) > 0:
+                    return True, df
+                else:
+                    print("get_log_program_execution: None")
+    return False, None
+
+def update_log_program_execution_read(idx):
+    task_name = "update_log_program_execution_read"
+    params = { 'idx': int(idx) }
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                return True, ""
+            elif respose["return"]["result"] == "error":
+                return False, respose["return"]["data"]
+        else:
+            return False, "Error: no result values"
+    else:
+        return False, "Error: no return values"
+
+def insert_log_program_execution(aidx, app, msg):
+    task_name = "insert_log_program_execution"
+    params = { 'aidx': int(aidx),
+               'app': f'{app}',
+               'msg': f'{msg}' }
+    respose = fetch_result_from_remote_server(task_name, params)
+    if "return" in respose:
+        if "result" in respose["return"]:
+            if respose["return"]["result"] == "success":
+                return True, ""
+            elif respose["return"]["result"] == "error":
+                return False, respose["return"]["data"]
+        else:
+            return False, "Error: no result values"
+    else:
+        return False, "Error: no return values"
 
 #def fetch_threaded_result(task, params):
 #    result = None
