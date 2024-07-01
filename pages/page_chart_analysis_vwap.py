@@ -78,16 +78,32 @@ def get_detected_dates(year_from, month_from, day_from):
     return business_days
 
 def get_detected_stocks(idt):
-    task_name = "get_algo_stocks_increase10_by_date"
-    params = { "idt": f"{idt}" }
-    respose = dc.fetch_result_from_remote_server(task_name, params)
-    if "return" in respose:
-        if "result" in respose["return"]:
-            if respose["return"]["result"] == "success":
-                stocklist_df = pd.DataFrame(respose["return"]["data"])
-                if stocklist_df is not None and not stocklist_df.empty:
-                    stocknames = stocklist_df['name'].tolist()
-                    return True, stocknames, stocklist_df
+    # task_name = "get_algo_stocks_increase10_by_date"
+    # params = { "idt": f"{idt}" }
+    # 20240701 increase10_history ADD 만 보여주던 목록을 snapshot 목록으로 변경함
+    if idt >= "20240624":
+        task_name = "get_algo_stocks_increase10_snapshot_by_date"
+        params = { "ssdt": f"{idt}" }
+        respose = dc.fetch_result_from_remote_server(task_name, params)
+        if "return" in respose:
+            if "result" in respose["return"]:
+                if respose["return"]["result"] == "success":
+                    stocklist_df = pd.DataFrame(respose["return"]["data"])
+                    if stocklist_df is not None and not stocklist_df.empty:
+                        stocknames = stocklist_df['name'].tolist()
+                        return True, stocknames, stocklist_df
+    else:
+        task_name = "get_algo_stocks_increase10_by_date"
+        params = { "idt": f"{idt}" }
+        respose = dc.fetch_result_from_remote_server(task_name, params)
+        if "return" in respose:
+            if "result" in respose["return"]:
+                if respose["return"]["result"] == "success":
+                    stocklist_df = pd.DataFrame(respose["return"]["data"])
+                    if stocklist_df is not None and not stocklist_df.empty:
+                        stocknames = stocklist_df['name'].tolist()
+                        return True, stocknames, stocklist_df
+
     return False, None, None
 
 # Anchored VWAP 
