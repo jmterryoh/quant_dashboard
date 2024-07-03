@@ -613,6 +613,7 @@ def main():
 
         # 장대양봉일~최근까지 데이터
         i10dt_string_datetime =pytz.timezone('Asia/Seoul').localize(datetime.strptime(i10dt, "%Y%m%d")).strftime("%Y-%m-%d 09:00:00")
+        tvdata.index = tvdata.index.tz_convert(pytz.timezone('Asia/Seoul'))
         price_i10dt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
         price_i10dt_df.reset_index(inplace=True)
         price_i10dt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
