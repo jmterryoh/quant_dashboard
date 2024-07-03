@@ -671,7 +671,7 @@ def main():
             price_1day_df.set_index('Date', inplace=True)
             price_1day_df.drop(columns=['Change'], inplace=True)
             price_1day_df = pd.concat([price_1day_df, price_idt_df])
-            print(price_1day_df)
+            #print(price_1day_df)
 
             vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
