@@ -622,7 +622,7 @@ def main():
         # 장대양봉일 최고가 index 로 고점기준 vwap 생성
         i10dt_end_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 23:59:59")
         price_high_df = price_i10dt_df.loc[(price_i10dt_df.index >= i10dt_string_datetime) & (price_i10dt_df.index < i10dt_end_string_datetime)].copy()
-        print(price_i10dt_df, price_high_df, i10dt_string_datetime, i10dt_end_string_datetime)
+        print(price_i10dt_df, price_high_df, i10dt, i10dt_string_datetime, i10dt_end_string_datetime)
         price_high_index = price_high_df['Close'].idxmax()
         price_high_df = price_i10dt_df.loc[price_i10dt_df.index >= price_high_index].copy()
         vwap_high1_df = calculate_vwap_only(df=price_high_df, vwap_name="vwap", price_base="Close", volume_base="Volume")
