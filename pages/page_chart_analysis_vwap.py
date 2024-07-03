@@ -619,6 +619,8 @@ def main():
         price_i10dt_df.set_index('time', inplace=True)
         price_i10dt_df.index.name = 'Date'
 
+        print(tvdata)
+
         # 장대양봉일 최고가 index 로 고점기준 vwap 생성
         i10dt_end_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
         price_high_df = price_i10dt_df.loc[(price_i10dt_df.index >= i10dt_string_datetime) & (price_i10dt_df.index <= i10dt_end_string_datetime)].copy()
