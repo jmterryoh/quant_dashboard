@@ -656,7 +656,7 @@ def main():
 
             # vwap_high2_dataframe 직전저점(previous_vdt)과 저점(vdt)사이의 고점
             i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-            i10dt_string_datetime = i10dt_string_datetime.replace(hour=0, minute=0, second=0)
+            i10dt_string_datetime = i10dt_string_datetime.replace(hour=9, minute=0, second=0)
             i10dt_string_datetime = i10dt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
             pvdt_string_datetime = datetime.strptime(previous_vdt, "%Y%m%d")
             pvdt_string_datetime = pvdt_string_datetime.replace(hour=9, minute=0, second=0)
