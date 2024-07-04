@@ -625,6 +625,7 @@ def main():
         price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
         price_idt_df.set_index('time', inplace=True)
         price_idt_df.index.name = 'Date'
+        st.text(price_idt_df)
         #print(price_idt_df)
         
         # 직전저점 vwap
@@ -639,7 +640,6 @@ def main():
             price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index < idt_string_datetime)].copy()
             price_1day_df = price_1day_df.reset_index()
             price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
-            st.text(price_1day_df)
             price_1day_df.set_index('Date', inplace=True)
             price_1day_df.drop(columns=['Change'], inplace=True)
             price_1day_df = pd.concat([price_1day_df, price_idt_df])
