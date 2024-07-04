@@ -535,6 +535,8 @@ def main():
         tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
         if not tvdata.empty:
 
+            print(tvdata)
+            
             # datatime 형식을 string 형식으로 변환
             tvdata = tvdata.reset_index()
             tvdata['time'] = tvdata['datetime'].dt.strftime('%Y%m%d%H%M%S')
