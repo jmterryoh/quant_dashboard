@@ -554,6 +554,7 @@ def main():
         tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
         if not tvdata.empty:
 
+            print(datetime.now().astimezone().tzname())
             if datetime.now().astimezone().tzname() != "대한민국 표준시":
                 # tz-naive timestamp를 UTC로 localize
                 tvdata.index = tvdata.index.tz_localize('UTC')
@@ -687,7 +688,7 @@ def main():
             price_1day_df = pd.concat([price_1day_df, price_idt_df])
             #print(price_1day_df)
 
-            vwap_1day_df = calculate_vwap_only(df=price_1day_df, vwap_name="vwap", price_base="Low", volume_base="Volume")
+            vwap_1day_df = calculate_vwap_only(df=price_1day_df, vwap_name="vwap", price_base="Close", volume_base="Volume")
             # vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
             vwap_1day_df = vwap_1day_df.reset_index()
