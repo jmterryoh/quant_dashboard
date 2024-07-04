@@ -618,7 +618,7 @@ def main():
 
         # 장대양봉일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
         idt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-        idt_string_datetime = idt_string_datetime.replace(hour=9, minute=0, second=0)
+        idt_string_datetime = idt_string_datetime.replace(hour=0, minute=0, second=0)
         idt_string_datetime = idt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
         price_idt_df = tvdata.loc[tvdata.index >= idt_string_datetime].copy()
         st.text(idt_string_datetime)
