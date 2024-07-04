@@ -621,8 +621,6 @@ def main():
         idt_string_datetime = idt_string_datetime.replace(hour=0, minute=0, second=0)
         idt_string_datetime = idt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
         price_idt_df = tvdata.loc[tvdata.index >= idt_string_datetime].copy()
-        st.text(idt_string_datetime)
-        st.text(price_idt_df)
         price_idt_df.reset_index(inplace=True)
         price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
         price_idt_df.set_index('time', inplace=True)
