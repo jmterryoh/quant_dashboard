@@ -199,6 +199,20 @@ def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2):
 
     return df
 
+def calculate_vwap_only(df, vwap_name, price_base, volume_base):    
+    # Use .loc[] to avoid setting values on a slice of DataFrame
+    #df1 = df.loc[df.index >= anchor_date].copy()
+
+    # VWAP Formula : ACC (Close * Volume) / ACC (Volume)
+    data = pd.DataFrame({
+        f'{price_base}': df[price_base],  # Close value base
+        f'{volume_base}': df[volume_base],
+        vwap_name: (df[price_base] * df[volume_base]).cumsum() / df[volume_base].cumsum()
+    })
+    df[vwap_name] = data[vwap_name]
+
+    return df
+
 def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_date, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
     try:
         # 1. VWAP 계산(종가기준)
@@ -377,6 +391,11 @@ def find_recent_valley_before_date(zigzag_df, input_date, days_before=90):
 
     return recent_valley_date.strftime('%Y%m%d')
 
+def string_datetime_to_localize(value):
+    dt = datetime.strptime(value, '%Y%m%d%H%M%S')
+    utc_dt = pytz.utc.localize(dt)
+    kst_dt = utc_dt.astimezone(pytz.timezone('Asia/Seoul'))
+    return kst_dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def main():
 
@@ -535,8 +554,11 @@ def main():
         tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
         if not tvdata.empty:
 
-            print(tvdata)
-            
+            # tz-naive timestamp를 UTC로 localize
+            tvdata.index = tvdata.index.tz_localize('UTC')
+            # UTC에서 서울 시간으로 변경
+            tvdata.index = tvdata.index.tz_convert(pytz.timezone('Asia/Seoul'))
+
             # datatime 형식을 string 형식으로 변환
             tvdata = tvdata.reset_index()
             tvdata['time'] = tvdata['datetime'].dt.strftime('%Y%m%d%H%M%S')
@@ -546,6 +568,7 @@ def main():
 
             valley_string_datetime = vdt + "000000"
             price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
+
 
             # 2. vwap 계산 후 return
             success, df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, anchor_string_date=vdt,
@@ -599,13 +622,53 @@ def main():
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
+        # 장대양봉일~최근까지 데이터
+        i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        price_i10dt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
+        price_i10dt_df.reset_index(inplace=True)
+        price_i10dt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
+        price_i10dt_df.set_index('time', inplace=True)
+        price_i10dt_df.index.name = 'Date'
+
+        # 장대양봉일 최고가 index 로 고점기준 vwap 생성
+        vwap_high1_df = pd.DataFrame()
+        # i10dt_end_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 23:59:59")
+        # price_high_df = price_i10dt_df.loc[(price_i10dt_df.index >= i10dt_string_datetime) & (price_i10dt_df.index < i10dt_end_string_datetime)].copy()
+        # price_high_index = price_high_df['Close'].idxmax()
+        # price_high_df = price_i10dt_df.loc[price_i10dt_df.index >= price_high_index].copy()
+        # vwap_high1_df = calculate_vwap_only(df=price_high_df, vwap_name="vwap", price_base="Close", volume_base="Volume")
+        # vwap_high1_df = vwap_high1_df.reset_index()
+        # vwap_high1_df = vwap_high1_df.rename(columns={'Date': 'time'})
+
+        # 장대양봉일 이후~탐지일 최고가 index 로 고점기준 vwap 생성
+        vwap_high2_df = pd.DataFrame()
+        # i10dt_start_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 23:59:59")
+        # if i10dt == idt:
+        #     i10dt_start_string_datetime = pytz.timezone('Asia/Seoul').localize(datetime.strptime(i10dt, "%Y%m%d")).strftime("%Y-%m-%d 09:00:00")
+        # idt_end_string_datetime = pytz.timezone('Asia/Seoul').localize(datetime.strptime(idt, "%Y%m%d")).strftime("%Y-%m-%d 23:59:59")
+        # price_high_df = price_i10dt_df.loc[(price_i10dt_df.index >= i10dt_start_string_datetime) & (price_i10dt_df.index < idt_end_string_datetime)].copy()
+        # price_high_index = price_high_df['Close'].idxmax()
+        # price_high_df = price_i10dt_df.loc[price_i10dt_df.index >= price_high_index].copy()
+        # vwap_high2_df = calculate_vwap_only(df=price_high_df, vwap_name="vwap", price_base="Close", volume_base="Volume")
+        # vwap_high2_df = vwap_high2_df.reset_index()
+        # vwap_high2_df = vwap_high2_df.rename(columns={'Date': 'time'})
+
+        # 장대양봉일~최근까지 최고가 index 로 고점기준 vwap 생성
+        price_highest_index = price_i10dt_df['Close'].idxmax()
+        price_highest_df = price_i10dt_df.loc[price_i10dt_df.index >= price_highest_index].copy()
+        vwap_highest_df = calculate_vwap_only(df=price_highest_df, vwap_name="vwap", price_base="Close", volume_base="Volume")
+        vwap_highest_df = vwap_highest_df.reset_index()
+        vwap_highest_df = vwap_highest_df.rename(columns={'Date': 'time'})
+
         # 탐지일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
-        idt_string_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
-        price_idt_df = tvdata.loc[tvdata.index > idt_string_datetime].copy()
-        price_idt_df.reset_index(inplace=True)
-        price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
-        price_idt_df.set_index('time', inplace=True)
-        price_idt_df.index.name = 'Date'
+        idt_string_datetime = datetime.strptime(vdt, "%Y%m%d").strftime("%Y-%m-%d")
+        price_idt_df = price_i10dt_df.loc[price_i10dt_df.index >= idt_string_datetime].copy()
+
+        # price_idt_df = tvdata.loc[tvdata.index > idt_string_datetime].copy()
+        # price_idt_df.reset_index(inplace=True)
+        # price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
+        # price_idt_df.set_index('time', inplace=True)
+        # price_idt_df.index.name = 'Date'
         #print(price_idt_df)
         
         # 직전저점 vwap
@@ -614,14 +677,14 @@ def main():
 
         # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
         if previous_vdt:
-            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index  <= idt_string_datetime)].copy()
+            previous_vdt_string_datetime = datetime.strptime(previous_vdt, "%Y%m%d").strftime("%Y-%m-%d")
+            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt_string_datetime) & (price_1day_df.index <= idt_string_datetime)].copy()
             price_1day_df = price_1day_df.reset_index()
             price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
             price_1day_df.set_index('Date', inplace=True)
             price_1day_df.drop(columns=['Change'], inplace=True)
             price_1day_df = pd.concat([price_1day_df, price_idt_df])
             #print(price_1day_df)
-
 
             vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
@@ -630,6 +693,7 @@ def main():
             # vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
             vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
             #vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
+        
 
         # Save, Load button
         with col6:
@@ -639,7 +703,10 @@ def main():
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
-                                                , vwap_1day_dataframe = vwap_1day_df
+                                                , vwap_high1_dataframe=vwap_high1_df
+                                                , vwap_high2_dataframe=vwap_high2_df
+                                                , vwap_highest_dataframe=vwap_highest_df
+                                                , vwap_1day_dataframe=vwap_1day_df
                                                 , bollinger_dataframe=bollinger_df
                                                 , indicators_params=indicators_params
                                                 , pane_name="pane_daily"
