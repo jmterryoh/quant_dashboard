@@ -199,6 +199,20 @@ def calculate_vwap_bands(df, anchor_date, vwap_name, multiplier1, multiplier2):
 
     return df
 
+def calculate_vwap_only(df, vwap_name, price_base, volume_base):    
+    # Use .loc[] to avoid setting values on a slice of DataFrame
+    #df1 = df.loc[df.index >= anchor_date].copy()
+
+    # VWAP Formula : ACC (Close * Volume) / ACC (Volume)
+    data = pd.DataFrame({
+        f'{price_base}': df[price_base],  # Close value base
+        f'{volume_base}': df[volume_base],
+        vwap_name: (df[price_base] * df[volume_base]).cumsum() / df[volume_base].cumsum()
+    })
+    df[vwap_name] = data[vwap_name]
+
+    return df
+
 def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_date, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
     try:
         # 1. VWAP 계산(종가기준)
@@ -377,6 +391,11 @@ def find_recent_valley_before_date(zigzag_df, input_date, days_before=90):
 
     return recent_valley_date.strftime('%Y%m%d')
 
+def string_datetime_to_localize(value):
+    dt = datetime.strptime(value, '%Y%m%d%H%M%S')
+    utc_dt = pytz.utc.localize(dt)
+    kst_dt = utc_dt.astimezone(pytz.timezone('Asia/Seoul'))
+    return kst_dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def main():
 
@@ -597,8 +616,8 @@ def main():
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
-        # 탐지일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
-        idt_string_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
+        # 장대양봉일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
+        idt_string_datetime = datetime.strptime(i10dt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
         price_idt_df = tvdata.loc[tvdata.index > idt_string_datetime].copy()
         price_idt_df.reset_index(inplace=True)
         price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
@@ -620,7 +639,6 @@ def main():
             price_1day_df = pd.concat([price_1day_df, price_idt_df])
             #print(price_1day_df)
 
-
             vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
             vwap_1day_df = vwap_1day_df.reset_index()
@@ -637,6 +655,9 @@ def main():
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
+                                                , vwap_high1_dataframe = None
+                                                , vwap_high2_dataframe = None
+                                                , vwap_highest_dataframe = None
                                                 , vwap_1day_dataframe = vwap_1day_df
                                                 , bollinger_dataframe=bollinger_df
                                                 , indicators_params=indicators_params
