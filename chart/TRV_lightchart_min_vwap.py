@@ -100,8 +100,8 @@ def set_vwap_indicators(series, indicators):
 
 def string_datetime_to_timestamp(value):
     dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-    #utc_dt = pytz.utc.localize(dt)
-    kst_dt = dt.astimezone(pytz.timezone('Asia/Seoul'))
+    utc_dt = pytz.utc.localize(dt)
+    kst_dt = utc_dt.astimezone(pytz.timezone('Asia/Seoul'))
     timestamp = int(time.mktime(kst_dt.timetuple()))
     #timestamp = int(time.mktime(dt.timetuple()))
     return timestamp
