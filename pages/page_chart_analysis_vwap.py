@@ -669,6 +669,9 @@ def main():
             vwap_high2_dataframe = vwap_high2_dataframe.reset_index()
 
             # vwap_highest_dataframe 장대양봉일(i10dt) 이후 최고점
+            i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
+            i10dt_string_datetime = i10dt_string_datetime.replace(hour=9, minute=0, second=0)
+            i10dt_string_datetime = i10dt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
             price_pvdt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
             price_high_index = price_pvdt_df['close'].idxmax() # 고점찾기
             price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
