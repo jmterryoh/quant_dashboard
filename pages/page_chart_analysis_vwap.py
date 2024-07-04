@@ -668,6 +668,7 @@ def main():
             vwap_high2_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="close", volume_base="volume")
             vwap_high2_dataframe = vwap_high2_dataframe.reset_index()
 
+            st.text(price_pvdt_df)
             print(pvdt_string_datetime, i10dt_string_datetime, price_high_index)
 
             # vwap_highest_dataframe 장대양봉일(i10dt) 이후 최고점
