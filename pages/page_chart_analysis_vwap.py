@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 import sys
 import json
+import time
 import pytz
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import session as ss
@@ -391,11 +392,12 @@ def find_recent_valley_before_date(zigzag_df, input_date, days_before=90):
 
     return recent_valley_date.strftime('%Y%m%d')
 
-def string_datetime_to_localize(value):
-    dt = datetime.strptime(value, '%Y%m%d%H%M%S')
+def string_datetime_to_timestamp(value):
+    dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     utc_dt = pytz.utc.localize(dt)
     kst_dt = utc_dt.astimezone(pytz.timezone('Asia/Seoul'))
-    return kst_dt.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = int(time.mktime(kst_dt.timetuple()))
+    return timestamp
 
 def main():
 
@@ -496,19 +498,19 @@ def main():
                             data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
                             interval = Interval.in_3_minute
                         elif selected_minutes == '5분':
-                            data_count = days_difference * 90  # 5분봉 기준 1시간: 12개, 7.5시간: 90
+                            data_count = days_difference * 90 + 2 * 90 # 5분봉 기준 1시간: 12개, 7.5시간: 90
                             interval = Interval.in_5_minute
                         elif selected_minutes == '15분':
-                            data_count = days_difference * 30  # 15분봉 기준 1시간: 4개, 7.5시간: 30
+                            data_count = days_difference * 30 + 4 * 30 # 15분봉 기준 1시간: 4개, 7.5시간: 30
                             interval = Interval.in_15_minute
                         elif selected_minutes == '30분':
-                            data_count = days_difference * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
+                            data_count = days_difference * 15 + 5 * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
                             interval = Interval.in_30_minute
                         elif selected_minutes == '1시간':
-                            data_count = days_difference * 8 + 4 * 8 # 1시간 기준 1시간: 1개, 7.5시간: 8
+                            data_count = days_difference * 8 + 6 * 8 # 1시간 기준 1시간: 1개, 7.5시간: 8
                             interval = Interval.in_1_hour
                         elif selected_minutes == '1일':
-                            data_count = days_difference + 25  # 1일 기준, 1개
+                            data_count = days_difference + 50  # 1일 기준, 1개
                             interval = Interval.in_daily
             with col62:
                 if selected_stockname:
@@ -552,7 +554,7 @@ def main():
         vwap_df = pd.DataFrame()
         bollinger_df = pd.DataFrame()
         tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
-        if not tvdata.empty:
+        if tvdata is not None and not tvdata.empty:
 
             # datatime 형식을 string 형식으로 변환
             tvdata = tvdata.reset_index()
@@ -626,30 +628,56 @@ def main():
         price_idt_df.set_index('time', inplace=True)
         price_idt_df.index.name = 'Date'
         #print(price_idt_df)
-        
+
         # 직전저점 vwap
         vwap_1day_df = pd.DataFrame()
         previous_vdt, price_1day_df = zz.get_previous_valley_date(stock_code=stock_code_only, vdt=vdt, base_price="Close", days_before=90)
 
+        # 직전저점(previous_vdt)과 저점(vdt)사이의 고점
+        vwap_high2_dataframe = pd.DataFrame()
+
+        # 장대양봉일부터 최고점
+        vwap_highest_dataframe = pd.DataFrame()
+
         # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
         if previous_vdt:
-            idt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-            idt_string_datetime = idt_string_datetime.replace(hour=0, minute=0, second=0)
-            idt_string_datetime = idt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index < idt_string_datetime)].copy()
-            price_1day_df = price_1day_df.reset_index()
-            price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
-            price_1day_df.set_index('Date', inplace=True)
-            price_1day_df.drop(columns=['Change'], inplace=True)
-            price_1day_df = pd.concat([price_1day_df, price_idt_df])
+            price_pvdt_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index < idt_string_datetime)].copy()
+            price_pvdt_df = price_pvdt_df.reset_index()
+            price_pvdt_df['Date'] = price_pvdt_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
+            price_pvdt_df.set_index('Date', inplace=True)
+            price_pvdt_df.drop(columns=['Change'], inplace=True)
+            price_pvdt_df = pd.concat([price_pvdt_df, price_idt_df])
 
-            vwap_1day_df = calculate_vwap_bands(df=price_1day_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
+            vwap_1day_df = calculate_vwap_bands(df=price_pvdt_df, anchor_date=previous_vdt, vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
             # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
             vwap_1day_df = vwap_1day_df.reset_index()
-            # vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
-            # vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
             vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
-            #vwap_1day_df['time'] = vwap_1day_df['time'].dt.strftime('%Y-%m-%d 15:30:00')
+
+
+            # vwap_high2_dataframe 직전저점(previous_vdt)과 저점(vdt)사이의 고점
+            i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
+            i10dt_string_datetime = i10dt_string_datetime.replace(hour=0, minute=0, second=0)
+            i10dt_string_datetime = i10dt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            pvdt_string_datetime = datetime.strptime(previous_vdt, "%Y%m%d")
+            pvdt_string_datetime = pvdt_string_datetime.replace(hour=9, minute=0, second=0)
+            pvdt_string_datetime = pvdt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            
+            price_pvdt_df = tvdata.loc[(tvdata.index >= pvdt_string_datetime) & (tvdata.index < i10dt_string_datetime)].copy()
+            price_high_index = price_pvdt_df['close'].idxmax() # 고점찾기
+            price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
+            vwap_high2_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="close", volume_base="volume")
+            vwap_high2_dataframe = vwap_high2_dataframe.reset_index()
+
+            # vwap_highest_dataframe 장대양봉일(i10dt) 이후 최고점
+            price_pvdt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
+            price_high_index = price_pvdt_df['close'].idxmax() # 고점찾기
+            price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
+            vwap_highest_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="close", volume_base="volume")
+            vwap_highest_dataframe = vwap_highest_dataframe.reset_index()
+
+            print(pvdt_string_datetime, i10dt_string_datetime, price_high_index)
+            #print(vwap_high2_dataframe)
+
 
         # Save, Load button
         with col6:
@@ -660,8 +688,8 @@ def main():
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
                                                 , vwap_high1_dataframe = None
-                                                , vwap_high2_dataframe = None
-                                                , vwap_highest_dataframe = None
+                                                , vwap_high2_dataframe = vwap_high2_dataframe
+                                                , vwap_highest_dataframe = vwap_highest_dataframe
                                                 , vwap_1day_dataframe = vwap_1day_df
                                                 , bollinger_dataframe=bollinger_df
                                                 , indicators_params=indicators_params
