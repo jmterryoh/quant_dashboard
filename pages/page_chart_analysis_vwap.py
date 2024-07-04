@@ -637,6 +637,7 @@ def main():
             idt_string_datetime = idt_string_datetime.replace(hour=0, minute=0, second=0)
             idt_string_datetime = idt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
             price_1day_df = price_1day_df.loc[(price_1day_df.index >= previous_vdt) & (price_1day_df.index < idt_string_datetime)].copy()
+            st.text(price_1day_df)
             price_1day_df = price_1day_df.reset_index()
             price_1day_df['Date'] = price_1day_df['Date'].dt.strftime('%Y-%m-%d 15:30:00')
             price_1day_df.set_index('Date', inplace=True)
