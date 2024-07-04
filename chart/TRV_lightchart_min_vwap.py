@@ -103,6 +103,7 @@ def string_datetime_to_timestamp(value):
     utc_dt = pytz.utc.localize(dt)
     kst_dt = utc_dt.astimezone(pytz.timezone('Asia/Seoul'))
     timestamp = int(time.mktime(kst_dt.timetuple()))
+    #timestamp = int(time.mktime(dt.timetuple()))
     return timestamp
 
 def get_stock_chart(symbol
