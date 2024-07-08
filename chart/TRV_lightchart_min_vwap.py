@@ -221,20 +221,20 @@ def get_stock_chart(symbol
         vwap_high1_dataframe['time'] = vwap_high1_dataframe['time'].apply(string_datetime_to_timestamp)
         vwap_vwap_df = vwap_high1_dataframe[['time', 'vwap']]
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
-        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGH1", data=vwap_vwap_df, color="orangered", linewidth=2, pane=0))
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGH1", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
 
     if vwap_high2_dataframe is not None and not vwap_high2_dataframe.empty:
         vwap_high2_dataframe['time'] = vwap_high2_dataframe['time'].apply(string_datetime_to_timestamp)
         vwap_vwap_df = vwap_high2_dataframe[['time', 'vwap']]
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
-        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGH2", data=vwap_vwap_df, color="orangered", linewidth=2, pane=0))
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGH2", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
 
     # 최고점 기준 VWAP
     if vwap_highest_dataframe is not None and not vwap_highest_dataframe.empty:
         vwap_highest_dataframe['time'] = vwap_highest_dataframe['time'].apply(string_datetime_to_timestamp)
         vwap_vwap_df = vwap_highest_dataframe[['time', 'vwap']]
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
-        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGHEST", data=vwap_vwap_df, color="red", linewidth=2, pane=0))
+        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGHEST", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
 
 
     # 직전저점 기준 일봉 VWAP
