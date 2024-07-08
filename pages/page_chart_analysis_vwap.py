@@ -691,7 +691,7 @@ def main():
 
         # 직전저점 vwap
         vwap_1day_df = pd.DataFrame()
-        previous_vdt, price_1day_df = zz.get_previous_valley_datetime(stock_code=stock_code_only, stock_name=stock_name, vdt=vdt, base_price="close", days_before=30)
+        previous_vdt, price_1day_df = zz.get_previous_valley_datetime(stock_code=stock_code_only, stock_name=stock_name, vdt=vdt, base_price="close", days_before=5)
 
         # 직전저점(previous_vdt)과 저점(vdt)사이의 고점
         vwap_high2_dataframe = pd.DataFrame()
