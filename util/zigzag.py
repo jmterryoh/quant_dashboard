@@ -127,7 +127,7 @@ def find_recent_valley_before_date(zigzag_df, input_date, days_before=30):
     if recent_valley_datetime:
         min_recent_valley_datetime = recent_valley_datetime
         min_recent_valley_value = recent_valley_value
-        start_datetime = recent_valley_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
+        start_datetime = recent_valley_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
         end_datetime = recent_valley_datetime.replace(hour=15, minute=30, second=0, microsecond=0)
         for index, row in zigzag_df.iterrows():
             entry_datetime = row['time']
