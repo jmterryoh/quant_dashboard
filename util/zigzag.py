@@ -111,19 +111,36 @@ def find_recent_valley_before_date(zigzag_df, input_date, days_before=30):
     zigzag_df = zigzag_df.iloc[::-1]
 
     # 입력된 날짜 이전의 가장 최근 valley의 날짜 찾기
-    recent_valley_date = None
+    recent_valley_datetime = None
+    recent_valley_value = None
     for index, row in zigzag_df.iterrows():
-        entry_date = row['time']
+        entry_datetime = row['time']
+        entry_value = row['value']
         #print(entry_date, row['pivot'], target_date)
-        if one_month_ago <= entry_date < target_date and row['pivot'] == 'valley':# and row['value'] < target_value:
-            #print("valley", entry_date)
-            recent_valley_date = entry_date
+        if one_month_ago <= entry_datetime < target_date and row['pivot'] == 'valley':# and row['value'] < target_value:
+            recent_valley_datetime = entry_datetime
+            recent_valley_value = entry_value
             break
+
+    # 해당일에서 최소price 인 valley의 시간
+    min_recent_valley_datetime = None
+    if recent_valley_datetime:
+        min_recent_valley_datetime = recent_valley_datetime
+        min_recent_valley_value = recent_valley_value
+        start_datetime = recent_valley_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
+        end_datetime = recent_valley_datetime.replace(hour=15, minute=30, second=0, microsecond=0)
+        for index, row in zigzag_df.iterrows():
+            entry_datetime = row['time']
+            entry_value = row['value']
+            if start_datetime <= entry_datetime <= end_datetime and row['pivot'] == 'valley':# and row['value'] < target_value:
+                if entry_value < min_recent_valley_value:
+                    min_recent_valley_datetime = entry_datetime
+                    min_recent_valley_value = entry_value
     
-    if recent_valley_date is None:
+    if min_recent_valley_datetime is None:
         return None
 
-    return recent_valley_date.strftime('%Y%m%d%H%M%S')
+    return min_recent_valley_datetime.strftime('%Y%m%d%H%M%S')
 
 
 def get_previous_valley_datetime(stock_code, stock_name, vdt, base_price="close", days_before=30):
@@ -131,7 +148,7 @@ def get_previous_valley_datetime(stock_code, stock_name, vdt, base_price="close"
     try:
         # vdt
         #vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
-        price_1day_df = tv.get_tvdata_from_vdt_days_before(stock_code=stock_code, stock_name=stock_name, selected_minutes="30분", vdt=vdt, days_before=days_before)
+        price_1day_df = tv.get_tvdata_from_vdt_days_before(stock_code=stock_code, stock_name=stock_name, selected_minutes="5분", vdt=vdt, days_before=days_before)
         if price_1day_df is not None and not price_1day_df.empty:
             zigzag_df = get_zigzag(price_1day_df, base_price=base_price)
             if zigzag_df is not None and not zigzag_df.empty:
