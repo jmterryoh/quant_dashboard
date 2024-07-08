@@ -517,11 +517,11 @@ def main():
             if selected_stockname:
                 with col31:
                     ema_A_length = 21 if col31.toggle(label="21 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
-                    ema_B_length = 33 if col31.toggle(label="33 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                    ema_B_length = 45 if col31.toggle(label="45 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
                     pass
                 with col32:
-                    ema_C_length = 45 if col32.toggle(label="45 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 225 if col32.toggle(label="225 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+                    ema_C_length = 225 if col32.toggle(label="225 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 385 if col32.toggle(label="385 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
@@ -670,11 +670,12 @@ def main():
         if ema_A_length > 0:
             ema_param.update({'EMA_A': {'length': ema_A_length, 'color': 'royalblue', 'linewidth': 2}})
         if ema_B_length > 0:
-            ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 2}})
+            #ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 2}})
+            ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'crimson', 'linewidth': 2}})
         if ema_C_length > 0:
             ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 2}})
         if ema_D_length > 0:
-            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 2}})
+            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'orange', 'linewidth': 2}})
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
