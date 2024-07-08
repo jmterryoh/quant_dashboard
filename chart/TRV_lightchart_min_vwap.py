@@ -153,7 +153,8 @@ def get_stock_chart(symbol
             ema_color = ema_param.get('color')
             ema_linewidth = ema_param.get('linewidth')
 
-            df.ta.ema(close='close', length=ema_length, offset=None, append=True)
+            df[f"EMA_{ema_length}"] = df['close'].ewm(span=ema_length, adjust=False).mean()
+            #df.ta.ema(close='close', length=ema_length, offset=None, append=True)
             if f"EMA_{ema_length}" in df.columns:
                 ema_data = dataToJSON(df, f"EMA_{ema_length}", ema_length, ema_color)  # 예시로 red 사용
                 seriesMultipaneChart.append(get_series_line_string(title=f"EMA_{ema_length}", data=ema_data, color=ema_color, linewidth=ema_linewidth, pane=0))
