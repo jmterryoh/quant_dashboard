@@ -28,7 +28,7 @@ def main():
                     ss.create_session(role=role)
                     st.success("Login successful!")
                     # Redirect to page1.py with session token
-                    st.switch_page("pages/page_dashboard_interest.py")
+                    st.switch_page("pages/page_chart_analysis_vwap.py")
                 else:
                     st.error("Invalid username or password.")
             else:
