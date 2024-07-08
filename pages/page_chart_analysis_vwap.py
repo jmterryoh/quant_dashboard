@@ -728,7 +728,7 @@ def main():
             price_pvdt_df = tvdata.loc[(tvdata.index >= pvdt_string_datetime) & (tvdata.index < i10dt_string_datetime)].copy()
             price_high_index = price_pvdt_df['high'].idxmax() # 고점찾기
             price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
-            vwap_high2_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="high", volume_base="volume")
+            vwap_high2_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="low", volume_base="volume")
             vwap_high2_dataframe = vwap_high2_dataframe.reset_index()
 
             #st.text(price_pvdt_df)
@@ -741,7 +741,7 @@ def main():
             price_pvdt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
             price_high_index = price_pvdt_df['high'].idxmax() # 고점찾기
             price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
-            vwap_highest_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="high", volume_base="volume")
+            vwap_highest_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="low", volume_base="volume")
             vwap_highest_dataframe = vwap_highest_dataframe.reset_index()
 
             #print(pvdt_string_datetime, i10dt_string_datetime, price_high_index)
