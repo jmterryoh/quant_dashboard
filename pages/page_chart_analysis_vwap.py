@@ -520,8 +520,8 @@ def main():
                     ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
                     pass
                 with col32:
-                    ema_C_length = 45 if col32.toggle(label="45 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 225 if col32.toggle(label="225 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+                    ema_C_length = 25 if col32.toggle(label="25 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 50 if col32.toggle(label="50 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
@@ -675,7 +675,7 @@ def main():
         if ema_C_length > 0:
             ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 2}})
         if ema_D_length > 0:
-            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'orange', 'linewidth': 2}})
+            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 2}})
 
         indicators_params = {'ema': ema_param, 'vwap': vwap_param}
 
