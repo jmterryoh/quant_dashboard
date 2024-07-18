@@ -323,3 +323,4 @@ def get_zigzag_threshold(df, base_price="Close", threshold=0.01):
         zigzag_lines_data.append({"time": dates[-1], "value": df.iloc[-1][f"{base_price}"], "pivot": "last"})
 
     return pd.DataFrame(zigzag_lines_data)
+
