@@ -93,7 +93,7 @@ def get_next_business_day(date_string):
     next_day_obj = date_obj + timedelta(days=1)
         
     # 다음 영업일 찾기 (주말 및 공휴일 건너뛰기)
-    while next_day_obj.weekday() >= 5 or next_day_obj in holidays_datetime:
+    while next_day_obj.weekday() >= 5 or next_day_obj in korean_holidays:
         next_day_obj += timedelta(days=1)
     
     # 결과를 %Y%m%d 형식의 문자열로 변환
