@@ -137,7 +137,7 @@ def get_tvdata_from_vdt(stock_code, stock_name, selected_minutes, vdt, days_more
     vdt_one_week_ago = vdt_date - timedelta(days=0)
     days_difference = (today - vdt_one_week_ago).days + days_more
 
-    interval = Interval.in_5_minute
+    interval = Interval.in_1_minute
     if selected_minutes:
         if selected_minutes == '1분':
             data_count = days_difference * 381  # 1분봉 기준 1시간: 60개, 7.5시간: 450
