@@ -186,7 +186,7 @@ def get_stock_chart(symbol
 
     zigzag_points = zigzag_data.copy()
     today = datetime.now(pytz.timezone('Asia/Seoul'))
-    base_datetime = today.strftime("%Y-%m-%d 09:10:00") # 표준시로
+    base_datetime = today.strftime("%Y-%m-%d 00:10:00") # 표준시로
     num, slopes, vwaps = vwc.get_near_2vwaps_current_position(zigzag_points=zigzag_points, input_data=dataframe, current_time=base_datetime)
     st.text(slopes)
     st.text(vwaps[0])
