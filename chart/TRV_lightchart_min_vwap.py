@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import zigzag as zz
+from util import vwapchain as vwc
 
 
 #COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
@@ -108,6 +109,7 @@ def string_datetime_to_timestamp(value):
 def get_stock_chart(symbol
                    , dataframe
                    , vwap_dataframe
+                   , vwap_band_gap
                    , vwap_high1_dataframe
                    , vwap_high2_dataframe
                    , vwap_highest_dataframe
@@ -153,8 +155,8 @@ def get_stock_chart(symbol
             ema_color = ema_param.get('color')
             ema_linewidth = ema_param.get('linewidth')
 
-            df[f"EMA_{ema_length}"] = df['close'].rolling(window=ema_length).mean() # MA
-            #df[f"EMA_{ema_length}"] = df['close'].ewm(span=ema_length, adjust=False).mean() # EMA
+            #df[f"EMA_{ema_length}"] = df['close'].rolling(window=ema_length).mean() # MA
+            df[f"EMA_{ema_length}"] = df['close'].ewm(span=ema_length, adjust=False).mean() # EMA
             if f"EMA_{ema_length}" in df.columns:
                 ema_data = dataToJSON(df, f"EMA_{ema_length}", ema_length, ema_color)  # 예시로 red 사용
                 seriesMultipaneChart.append(get_series_line_string(title=f"EMA_{ema_length}", data=ema_data, color=ema_color, linewidth=ema_linewidth, pane=0))
@@ -177,10 +179,24 @@ def get_stock_chart(symbol
     # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
     # ZigZag
-    zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
+    #gap = (vwap_band_gap * 0.6) / 100
+    gap = 0.01
+    zigzag_data = zz.get_zigzag_threshold(dataframe, base_price='close', threshold=gap)
+
+    zigzag_points = zigzag_data.copy()
+    today = datetime.now(pytz.timezone('Asia/Seoul'))
+    base_datetime = today.strftime("%Y-%m-%d 09:10:00")
+    num, slopes, vwaps = vwc.get_near_2vwaps_current_position(zigzag_points=zigzag_points, input_data=dataframe, current_time=base_datetime)
+    #print(num, slopes)
+    #print(vwaps[0])
+    #print(vwaps[1])
+    vwap_high1_dataframe = vwaps[0]
+    vwap_high2_dataframe = vwaps[1]
+
+    #zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
     zigzag_data = zigzag_data.reset_index()
-    #zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d %H:%M:%S')   
+    #zigzag_data['time'] = zigzag_data['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
     zigzag_line_data = convertDataToJSON(zigzag_data, "value")
     seriesMultipaneChart.append(get_series_line_string(title=f"ZIGZAG", data=zigzag_line_data, color="black", linewidth=2, pane=0))
 
@@ -230,12 +246,12 @@ def get_stock_chart(symbol
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
         seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGH2", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
 
-    # 최고점 기준 VWAP
-    if vwap_highest_dataframe is not None and not vwap_highest_dataframe.empty:
-        vwap_highest_dataframe['time'] = vwap_highest_dataframe['time'].apply(string_datetime_to_timestamp)
-        vwap_vwap_df = vwap_highest_dataframe[['time', 'vwap']]
-        vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
-        seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGHEST", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
+    # # 최고점 기준 VWAP
+    # if vwap_highest_dataframe is not None and not vwap_highest_dataframe.empty:
+    #     vwap_highest_dataframe['time'] = vwap_highest_dataframe['time'].apply(string_datetime_to_timestamp)
+    #     vwap_vwap_df = vwap_highest_dataframe[['time', 'vwap']]
+    #     vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
+    #     seriesMultipaneChart.append(get_series_line_string(title=f"VWAP_HIGHEST", data=vwap_vwap_df, color="blue", linewidth=2, pane=0))
 
 
     # 직전저점 기준 일봉 VWAP
