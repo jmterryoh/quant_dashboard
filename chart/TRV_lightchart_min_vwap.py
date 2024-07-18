@@ -188,9 +188,9 @@ def get_stock_chart(symbol
     today = datetime.now(pytz.timezone('Asia/Seoul'))
     base_datetime = today.strftime("%Y-%m-%d 00:10:00") # 표준시로
     num, slopes, vwaps = vwc.get_near_2vwaps_current_position(zigzag_points=zigzag_points, input_data=dataframe, current_time=base_datetime)
-    st.text(slopes)
-    st.text(vwaps[0])
-    st.text(vwaps[1])
+    # st.text(slopes)
+    # st.text(vwaps[0])
+    # st.text(vwaps[1])
     vwap_high1_dataframe = vwaps[0]
     vwap_high2_dataframe = vwaps[1]
 
