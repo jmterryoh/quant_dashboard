@@ -195,7 +195,7 @@ def get_stock_chart(symbol
         open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
         base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:10:00")
     else:
-        open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
         base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:10:00") # 표준시로
 
     zigzag_points = zigzag_data.copy()
