@@ -781,7 +781,8 @@ def main():
  
         show_volume = False
         next_biz_day = get_next_business_day(selected_idt)
-        if next_biz_day > selected_idt:
+        today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
+        if next_biz_day > today:
             next_biz_day = selected_idt
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , selected_idt = next_biz_day
