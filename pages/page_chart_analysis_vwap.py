@@ -32,6 +32,17 @@ multiplier2 = 1.0
 multiplier3 = 1.5
 multiplier4 = 2.0
 
+
+# 한국의 주요 공휴일 리스트 (2024년)
+korean_holidays = [
+    "2024-06-06", # 현충일
+    "2024-08-15", # 광복절
+    "2024-09-16", "2024-09-17", "2024-09-18", # 추석 연휴
+    "2024-10-03", # 개천절
+    "2024-10-09", # 한글날
+    "2024-12-25" # 성탄절
+]
+
 current_page = "pages/page_chart_analysis_vwap.py"
 
 def get_detected_dates(year_from, month_from, day_from):
@@ -44,16 +55,6 @@ def get_detected_dates(year_from, month_from, day_from):
 
     # 시작 날짜 설정
     start_date = korea_timezone.localize(datetime(year_from, month_from, day_from))
-
-    # 한국의 주요 공휴일 리스트 (2024년)
-    korean_holidays = [
-        "2024-06-06", # 현충일
-        "2024-08-15", # 광복절
-        "2024-09-16", "2024-09-17", "2024-09-18", # 추석 연휴
-        "2024-10-03", # 개천절
-        "2024-10-09", # 한글날
-        "2024-12-25" # 성탄절
-    ]
 
     # 문자열을 datetime 객체로 변환하고, 타임존 정보 추가
     korean_holidays = [korea_timezone.localize(datetime.strptime(date, "%Y-%m-%d")) for date in korean_holidays]
@@ -77,6 +78,26 @@ def get_detected_dates(year_from, month_from, day_from):
     business_days = sorted(business_days, reverse=True)[:20]        
 
     return business_days
+
+# 다음 영업일을 계산하는 코드
+# date_string: 기준일, holidays_datetime: 공휴일 목록(datetime 형식)
+def get_next_business_day(date_string):
+    korean_holidays
+
+    # 주어진 문자열을 datetime 객체로 변환
+    date_obj = datetime.strptime(date_string, "%Y%m%d")
+    
+    # 다음 날 계산
+    next_day_obj = date_obj + timedelta(days=1)
+        
+    # 다음 영업일 찾기 (주말 및 공휴일 건너뛰기)
+    while next_day_obj.weekday() >= 5 or next_day_obj in holidays_datetime:
+        next_day_obj += timedelta(days=1)
+    
+    # 결과를 %Y%m%d 형식의 문자열로 변환
+    next_day_str = next_day_obj.strftime("%Y%m%d")
+    
+    return next_day_str
 
 def get_detected_stocks(idt):
     # task_name = "get_algo_stocks_increase10_by_date"
@@ -758,7 +779,7 @@ def main():
  
         show_volume = False
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
-                                                , selected_idt = selected_idt
+                                                , selected_idt = get_next_business_day(selected_idt)
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
                                                 , vwap_band_gap = band_gap
