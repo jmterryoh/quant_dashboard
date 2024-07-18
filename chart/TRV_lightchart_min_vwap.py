@@ -236,6 +236,7 @@ def get_stock_chart(symbol
 
     # 고점 기준 VWAP
     if vwap_high1_dataframe is not None and not vwap_high1_dataframe.empty:
+        st.text(vwap_high1_dataframe)
         vwap_high1_dataframe['time'] = vwap_high1_dataframe['time'].apply(string_datetime_to_timestamp)
         vwap_vwap_df = vwap_high1_dataframe[['time', 'vwap']]
         vwap_vwap_df = convertDataToJSON(vwap_vwap_df, "vwap")
