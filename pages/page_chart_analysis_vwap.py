@@ -575,7 +575,7 @@ def main():
                     today = datetime.now(pytz.timezone('Asia/Seoul'))
                     vdt_one_week_ago = vdt_date - timedelta(days=0)
                     days_difference = (today - vdt_one_week_ago).days
-                    selected_minutes = st.selectbox('분봉 선택', index=1, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
+                    selected_minutes = st.selectbox('분봉 선택', index=0, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
                     if selected_minutes:
                         if selected_minutes == '1분':
                             data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
