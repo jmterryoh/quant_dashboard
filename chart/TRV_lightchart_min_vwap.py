@@ -108,6 +108,7 @@ def string_datetime_to_timestamp(value):
     return timestamp
 
 def get_stock_chart(symbol
+                   , selected_idt
                    , dataframe
                    , vwap_dataframe
                    , vwap_band_gap
@@ -185,8 +186,7 @@ def get_stock_chart(symbol
     zigzag_data = zz.get_zigzag_threshold(dataframe, base_price='close', threshold=gap)
 
     zigzag_points = zigzag_data.copy()
-    today = datetime.now(pytz.timezone('Asia/Seoul'))
-    base_datetime = today.strftime("%Y-%m-%d 00:10:00") # 표준시로
+    base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:10:00") # 표준시로
     num, slopes, vwaps = vwc.get_near_2vwaps_current_position(zigzag_points=zigzag_points, input_data=dataframe, current_time=base_datetime)
     # st.text(slopes)
     # st.text(vwaps[0])
