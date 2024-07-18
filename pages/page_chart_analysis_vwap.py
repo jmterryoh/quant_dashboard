@@ -780,8 +780,11 @@ def main():
             col61, col62 = st.columns(2)
  
         show_volume = False
+        next_biz_day = get_next_business_day(selected_idt)
+        if next_biz_day > selected_idt:
+            next_biz_day = selected_idt
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
-                                                , selected_idt = get_next_business_day(selected_idt)
+                                                , selected_idt = next_biz_day
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
                                                 , vwap_band_gap = band_gap
