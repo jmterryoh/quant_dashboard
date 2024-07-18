@@ -487,6 +487,7 @@ def main():
     interval = Interval.in_15_minute
 
     band_gap = 0
+    selected_idt = ""
 
     with st.container():
 
@@ -757,6 +758,7 @@ def main():
  
         show_volume = False
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
+                                                , selected_idt = selected_idt
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
                                                 , vwap_band_gap = band_gap
