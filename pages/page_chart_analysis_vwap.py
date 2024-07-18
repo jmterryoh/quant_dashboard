@@ -486,6 +486,8 @@ def main():
     data_count = None
     interval = Interval.in_15_minute
 
+    band_gap = 0
+
     with st.container():
 
         init_session_control_values()
@@ -520,8 +522,8 @@ def main():
                     ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
                     pass
                 with col32:
-                    ema_C_length = 25 if col32.toggle(label="25 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 50 if col32.toggle(label="50 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+                    ema_C_length = 60 if col32.toggle(label="60 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                    ema_D_length = 381 if col32.toggle(label="381 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
         with col4:
             col41, col42 = st.columns(2)
             with col41:
@@ -757,6 +759,7 @@ def main():
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
+                                                , vwap_band_gap = band_gap
                                                 , vwap_high1_dataframe = None
                                                 , vwap_high2_dataframe = vwap_high2_dataframe
                                                 , vwap_highest_dataframe = vwap_highest_dataframe
