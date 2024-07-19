@@ -182,8 +182,8 @@ def get_stock_chart(symbol
     # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
     # ZigZag
-    #gap = (vwap_band_gap * 0.6) / 100
-    gap = 0.01
+    gap = (vwap_band_gap * 1.0) / 100
+    #gap = 0.01
     zigzag_data = zz.get_zigzag_threshold(dataframe, base_price='close', threshold=gap)
 
 
@@ -193,19 +193,28 @@ def get_stock_chart(symbol
     current_locale = locale.getdefaultlocale()
     if current_locale[0] == "ko_KR":
         open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
-        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:10:00")
+        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
     else:
         open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
-        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:10:00") # 표준시로
+        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
 
-    zigzag_points = zigzag_data.copy()
-    num, slopes, vwaps, peak_dt, valley_dt = vwc.get_day_open_2vwaps(zigzag_points=zigzag_points, input_data=dataframe, open_time=open_datetime, current_time=base_datetime)
-    vwap_high1_dataframe = vwaps[0]
-    vwap_high2_dataframe = vwaps[1]
+    # zigzag_points = zigzag_data.copy()
+    # num, slopes, vwaps, peak_dt, valley_dt = vwc.get_day_open_2vwaps(zigzag_points=zigzag_points, input_data=dataframe, open_time=open_datetime, current_time=base_datetime)
+    # vwap_high1_dataframe = vwaps[0]
+    # vwap_high2_dataframe = vwaps[1]
 
-    #zigzag_points = zigzag_data.copy()
-    #vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=peak_dt, current_time="2024-07-18 12:00:00")
-    #print(vwap_support_points, first_above_vwap_time)
+    # zigzag_points = zigzag_data.copy()
+    # #vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=peak_dt, current_time="2024-07-19 09:23:00")
+
+    # minute_data = dataframe[dataframe.index >= open_datetime].copy()
+    # minute_data.reset_index(inplace=True)
+    # minute_data['time'] = pd.to_datetime(minute_data['time'])
+    # minute_data.set_index('time', inplace=True)
+    # vwap_df = vwap_high1_dataframe.copy()
+    # vwap_df.set_index('time', inplace=True)
+    # #open_datetime = pd.to_datetime(open_datetime)
+    # base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:05:00")
+    # first_above_vwap_time = vwc.find_first_above_vwap_time(minute_data=minute_data, vwap_df=vwap_df, start_time=base_datetime, base_price="close")
 
     #zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
