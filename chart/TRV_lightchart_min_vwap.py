@@ -263,9 +263,8 @@ def get_stock_chart(symbol
             st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']}")
         else:
             first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("00:00:00").time()].iloc[0]
-            valley_datetime = datetime.strptime(first_non_0900_valley['valley_time'], "%Y-%m-%d %H:%M:%S")
+            valley_datetime = first_non_0900_valley['valley_time']
             valley_datetime += timedelta(hours=9)
-            valley_datetime = valley_datetime.strftime("%Y-%m-%d %H:%M:%S")
             st.text(f"일자:{selected_idt} 매수:{valley_datetime} {first_non_0900_valley['valley_value']}")
     else:
         st.text(f"일자:{selected_idt} 매수시점 없음")
