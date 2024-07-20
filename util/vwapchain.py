@@ -272,8 +272,8 @@ def calculate_normalized_vwap_slope(vwap_df):
 def check_vwap_touch(valley_time, minute_data, vwap_df, base_price, tolerance=0.005): # 0.3%
     vwap_price = vwap_df.loc[valley_time, 'vwap']
     valley_price = minute_data.loc[valley_time, 'close']
-    if valley_price > vwap_price:
-        return True
+    # if valley_price > vwap_price:
+    #     return True
     return abs(valley_price - vwap_price) / vwap_price <= tolerance #and valley_price >= vwap_price
 
 # peak_time 이후 VWAP 값보다 close 값이 큰 최초의 시간을 찾는 함수
