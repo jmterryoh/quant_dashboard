@@ -258,8 +258,15 @@ def get_stock_chart(symbol
     vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=open_datetime, current_time=last_datetime)
     vwap_high1_dataframe = vwap_df
     if vwap_support_points is not None and not vwap_support_points.empty:
-        first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("09:00:00").time()].iloc[0]
-        st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']}")
+        if current_locale[0] == "ko_KR":
+            first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("09:00:00").time()].iloc[0]
+            st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']}")
+        else:
+            first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("00:00:00").time()].iloc[0]
+            valley_datetime = datetime.strptime(first_non_0900_valley['valley_time'], "%Y-%m-%d %H:%M:%S")
+            valley_datetime += timedelta(hours=9)
+            valley_datetime = valley_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            st.text(f"일자:{selected_idt} 매수:{valley_datetime} {first_non_0900_valley['valley_value']}")
     else:
         st.text(f"일자:{selected_idt} 매수시점 없음")
 
