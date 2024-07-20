@@ -5,7 +5,7 @@ import streamlit as st
 from streamlit_lightweight_charts_ntf import renderLightweightCharts
 
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import locale
 
@@ -108,6 +108,21 @@ def string_datetime_to_timestamp(value):
     timestamp = int(time.mktime(kst_dt.timetuple()))
     return timestamp
 
+
+def get_datetime_str(date_str, time_str):
+    return datetime.strptime(date_str, "%Y%m%d").strftime(f"%Y-%m-%d {time_str}")
+
+def get_zigzag_data(data, gap):
+    return zz.get_zigzag_threshold(data, base_price='close', threshold=gap)
+
+def find_latest_valley(zigzag_data):
+    valleys = zigzag_data[zigzag_data['pivot'] == 'valley']
+    if not valleys.empty:
+        latest_valley = valleys.iloc[-1]
+        return latest_valley['time'], latest_valley['value']
+    return None, None
+
+
 def get_stock_chart(symbol
                    , selected_idt
                    , dataframe
@@ -181,30 +196,97 @@ def get_stock_chart(symbol
     #             })
     # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
 
-    # ZigZag
-    gap = (vwap_band_gap * 1.0) / 100
-    #gap = 0.01
-    zigzag_data = zz.get_zigzag_threshold(dataframe, base_price='close', threshold=gap)
+    # base_datetime_str = get_datetime_str(selected_idt, "09:00:00")
+    # last_datetime_str = get_datetime_str(selected_idt, "15:20:00")
+
+    # base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+
+    #gap = (vwap_band_gap * 1.0) / 100
+    gap = 0.01
+    #data = dataframe[dataframe.index <= base_datetime_str].copy()
+
+    # Initial zigzag data and latest valley detection
+    zigzag_data = get_zigzag_data(dataframe, gap)
+    # latest_valley_time, latest_valley_value = find_latest_valley(zigzag_data)
+    # previous_valley_value = latest_valley_value
+
+    # if latest_valley_time is not None:
+    #     print(f"Latest valley detected at {latest_valley_time} with value {latest_valley_value}")
+
+    # incremented_datetime = base_datetime + timedelta(minutes=1)
+    # incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    # while incremented_datetime <= last_datetime:
+    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
+    #     zigzag_data = get_zigzag_data(data, gap)
+
+    #     # Update and check for the latest valley
+    #     nt1, nv1 = find_latest_valley(zigzag_data)
+
+    #     if nt1 is not None:
+    #         if previous_valley_value is None or nv1 <= previous_valley_value:
+    #             previous_valley_value = nv1
+    #             latest_valley_time, latest_valley_value = nt1, nv1
+    #             print(f"Latest valley updated to {latest_valley_time} with value {latest_valley_value}")
+
+    #     incremented_datetime += timedelta(minutes=1)
+    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
 
 
     # Get the current locale setting
     base_datetime = ""
     open_datetime = ""
+    last_datetime = ""
     current_locale = locale.getdefaultlocale()
     if current_locale[0] == "ko_KR":
         open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
         base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        last_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
     else:
         open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
         base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
+        last_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 06:30:00") # 표준시로
 
     # zigzag_points = zigzag_data.copy()
     # num, slopes, vwaps, peak_dt, valley_dt = vwc.get_day_open_2vwaps(zigzag_points=zigzag_points, input_data=dataframe, open_time=open_datetime, current_time=base_datetime)
     # vwap_high1_dataframe = vwaps[0]
     # vwap_high2_dataframe = vwaps[1]
 
-    # zigzag_points = zigzag_data.copy()
-    # #vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=peak_dt, current_time="2024-07-19 09:23:00")
+    zigzag_points = zigzag_data.copy()
+    vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=open_datetime, current_time=last_datetime)
+    vwap_high1_dataframe = vwap_df
+    if vwap_support_points is not None and not vwap_support_points.empty:
+        first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("09:00:00").time()].iloc[0]
+        st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']}")
+    else:
+        st.text(f"일자:{selected_idt} 매수시점 없음")
+
+
+    # base_datetime_str = get_datetime_str(selected_idt, "09:00:00")
+    # last_datetime_str = get_datetime_str(selected_idt, "15:20:00")
+    # base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # incremented_datetime = base_datetime + timedelta(minutes=1)
+    # incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    # vwap_high1_dataframe = pd.DataFrame()
+    # while incremented_datetime <= last_datetime:
+    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
+    #     zigzag_data = get_zigzag_data(data, gap = 0.01)
+
+    #     zigzag_points = zigzag_data.copy()
+    #     vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, 
+    #                                                                                        peak_time=base_datetime_str, current_time=incremented_datetime_str)
+    #     if vwap_support_points is not None and not vwap_support_points.empty:
+    #         #print(vwap_df, vwap_support_points, first_above_vwap_time)
+    #         print(incremented_datetime_str)
+    #         print(vwap_support_points)
+    #     vwap_high1_dataframe = vwap_df
+
+    #     incremented_datetime += timedelta(minutes=1)
+    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     # minute_data = dataframe[dataframe.index >= open_datetime].copy()
     # minute_data.reset_index(inplace=True)
