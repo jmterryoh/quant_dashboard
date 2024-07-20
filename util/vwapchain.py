@@ -262,8 +262,10 @@ def find_recent_zigzag_points(zigzag_df, start_time, end_time):
 def calculate_normalized_vwap_slope(vwap_df):
     # Use only the last 5 entries
     vwap_len = len(vwap_df)
-    if vwap_len > 10:
-        vwap_len = 10
+    if vwap_len > 5:
+        vwap_len = 5
+    if vwap_len <= 1:
+        return 0
     recent_vwap_df = vwap_df.iloc[vwap_len * (-1):]
     
     # Calculate time difference in minutes
