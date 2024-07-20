@@ -260,12 +260,22 @@ def find_recent_zigzag_points(zigzag_df, start_time, end_time):
 
 # 정규화된 VWAP 기울기 계산 함수
 def calculate_normalized_vwap_slope(vwap_df):
-    vwap_df['time_diff'] = (vwap_df.index - vwap_df.index.min()).total_seconds() / 60
-    mean_vwap = vwap_df['vwap'].mean()
-    std_vwap = vwap_df['vwap'].std()
-    vwap_df['normalized_vwap'] = (vwap_df['vwap'] - mean_vwap) / std_vwap
-
-    slope = np.polyfit(vwap_df['time_diff'], vwap_df['normalized_vwap'], 1)[0]
+    # Use only the last 5 entries
+    vwap_len = len(vwap_df)
+    if vwap_len > 5:
+        vwap_len = 5
+    recent_vwap_df = vwap_df.iloc[vwap_len * (-1):]
+    
+    # Calculate time difference in minutes
+    recent_vwap_df['time_diff'] = (recent_vwap_df.index - recent_vwap_df.index.min()).total_seconds() / 60
+    
+    # Normalize VWAP values
+    mean_vwap = recent_vwap_df['vwap'].mean()
+    std_vwap = recent_vwap_df['vwap'].std()
+    recent_vwap_df['normalized_vwap'] = (recent_vwap_df['vwap'] - mean_vwap) / std_vwap
+    
+    # Fit a linear model to the normalized VWAP values
+    slope = np.polyfit(recent_vwap_df['time_diff'], recent_vwap_df['normalized_vwap'], 1)[0]
     return slope
 
 # VWAP 터치 조건 판단 함수
@@ -339,8 +349,6 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time)
     vwap_df.set_index('time', inplace=True)
     minute_data.set_index('time', inplace=True)
 
-    vwap_slope = calculate_normalized_vwap_slope(vwap_df)
-
     # 최근 zigzag 피크와 밸리 찾기
     subsequent_zigzag_points = find_recent_zigzag_points(zigzag_points, peak_time, current_time)
 
@@ -359,6 +367,10 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time)
         if row['pivot'] == 'valley':
             peak_valley_time = row['time']
             if check_vwap_touch(peak_valley_time, minute_data, vwap_df, base_price):
+
+                temp_vwap_df = vwap_df[vwap_df.index <= peak_valley_time].copy()
+                vwap_slope = calculate_normalized_vwap_slope(temp_vwap_df)
+
                 results.append({
                     "peak_time": peak_time,
                     "valley_time": peak_valley_time,
