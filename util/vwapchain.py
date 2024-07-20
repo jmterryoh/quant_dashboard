@@ -272,6 +272,8 @@ def calculate_normalized_vwap_slope(vwap_df):
 def check_vwap_touch(valley_time, minute_data, vwap_df, base_price, tolerance=0.005): # 0.3%
     vwap_price = vwap_df.loc[valley_time, 'vwap']
     valley_price = minute_data.loc[valley_time, 'close']
+    if valley_price > vwap_price:
+        return True
     return abs(valley_price - vwap_price) / vwap_price <= tolerance #and valley_price >= vwap_price
 
 # peak_time 이후 VWAP 값보다 close 값이 큰 최초의 시간을 찾는 함수
@@ -365,5 +367,8 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time)
                     "touch_condition_met": True
                 })
 
+    vwap_df = vwap_df.reset_index()
+    vwap_df['time'] = vwap_df['time'].astype(str)
+
     results_df = pd.DataFrame(results)
-    return results_df, first_above_vwap_time
+    return vwap_df, results_df, first_above_vwap_time
