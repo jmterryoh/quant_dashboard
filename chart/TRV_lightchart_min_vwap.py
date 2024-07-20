@@ -260,12 +260,12 @@ def get_stock_chart(symbol
     if vwap_support_points is not None and not vwap_support_points.empty:
         if current_locale[0] == "ko_KR":
             first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("09:00:00").time()].iloc[0]
-            st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']} 기울기상승: {first_non_0900_valley['vwap_slope']}")
+            st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']} vwap 기울기: {first_non_0900_valley['vwap_slope']}")
         else:
             first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("00:00:00").time()].iloc[0]
             valley_datetime = first_non_0900_valley['valley_time']
             valley_datetime += timedelta(hours=9)
-            st.text(f"일자:{selected_idt} 매수:{valley_datetime} {first_non_0900_valley['valley_value']} 기울기상승: {first_non_0900_valley['vwap_slope']}")
+            st.text(f"일자:{selected_idt} 매수:{valley_datetime} {first_non_0900_valley['valley_value']} vwap 기울기: {first_non_0900_valley['vwap_slope']}")
     else:
         st.text(f"일자:{selected_idt} 매수시점 없음")
 
