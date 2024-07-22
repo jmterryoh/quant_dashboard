@@ -786,6 +786,7 @@ def main():
         current_locale = locale.getdefaultlocale()
         if current_locale[0] == "ko_KR":
             today = datetime.now().strftime("%Y%m%d")
+        st.text(today)
         if next_biz_day > today:
             next_biz_day = selected_idt
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
