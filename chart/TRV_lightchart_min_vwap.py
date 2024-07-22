@@ -180,34 +180,9 @@ def get_stock_chart(symbol
                 ema_data = dataToJSON(df, f"EMA_{ema_length}", ema_length, ema_color)  # 예시로 red 사용
                 seriesMultipaneChart.append(get_series_line_string(title=f"EMA_{ema_length}", data=ema_data, color=ema_color, linewidth=ema_linewidth, pane=0))
 
-    # # VWAP 계산
-    # # VWAP 은 계산과정이 많아 df 가 아닌 dataframe 을 사용해서 계산
-    # stock_indicators_options = {}
-    # vwap_params = indicators_params.get('vwap', {})
-    # for vwap_name, vwap_param in vwap_params.items():
-    #     if vwap_name:
-    #         vwap_dt = vwap_param.get('dt')
-    #         vwap_mt1 = vwap_param.get('mt1')
-    #         vwap_mt2 = vwap_param.get('mt2')
-    #         vwap_color = vwap_param.get('color')
-
-    #         if vwap_dt is not None:
-    #             stock_indicators_options.update({
-    #                 vwap_name: (calculate_vwap_bands, dataframe, vwap_dt, vwap_name, vwap_mt1, vwap_mt2, vwap_color),
-    #             })
-    # seriesMultipaneChart = set_vwap_indicators(series=seriesMultipaneChart, indicators=stock_indicators_options)
-
-    # base_datetime_str = get_datetime_str(selected_idt, "09:00:00")
-    # last_datetime_str = get_datetime_str(selected_idt, "15:20:00")
-
-    # base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
-    # last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
-
-    #gap = (vwap_band_gap * 1.0) / 100
-    gap = 0.01
-    #data = dataframe[dataframe.index <= base_datetime_str].copy()
-
+    # 기본 매수시점 확인
     # Initial zigzag data and latest valley detection
+    gap = 0.01
     zigzag_data = get_zigzag_data(dataframe, gap)
 
     # Get the current locale setting
@@ -234,15 +209,16 @@ def get_stock_chart(symbol
         try:
 
             if len(vwap_support_points) > 0:
-                valley_points = vwap_support_points.tail(1)
-                current_valley_time = valley_points.iloc[0]['valley_time']
-                higher_low = valley_points.iloc[0]['higher_low']
-                touch_condition_met = valley_points.iloc[0]['touch_condition_met']
+                vwap_support_points = vwap_support_points[vwap_support_points['touch_condition_met'] == True]
+                if vwap_support_points is not None and not vwap_support_points.empty:
+                    valley_points = vwap_support_points.tail(1)
+                    current_valley_time = valley_points.iloc[0]['valley_time']
+                    higher_low = valley_points.iloc[0]['higher_low']
+                    touch_condition_met = valley_points.iloc[0]['touch_condition_met']
 
-                if current_locale[0] != "ko_KR":
-                    current_valley_time += timedelta(hours=9)
+                    if current_locale[0] != "ko_KR":
+                        current_valley_time += timedelta(hours=9)
 
-                if touch_condition_met:
                     valley_value = valley_points.iloc[0]['valley_value']
                     textout = f"일자:{next_biz_day} 매수:{current_valley_time} {valley_value}"
                     st.text(textout)
@@ -255,6 +231,290 @@ def get_stock_chart(symbol
     else:
         st.text(f"일자:{next_biz_day} 매수시점 없음")
 
+
+    """"
+    # 시뮬레이션 시작점
+    # 지점상승 후 매수
+    # Get the current locale setting
+    base_datetime = ""
+    open_datetime = ""
+    last_datetime = ""
+    current_locale = locale.getdefaultlocale()
+    if current_locale[0] == "ko_KR":
+        open_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        base_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        last_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
+    else:
+        open_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
+        base_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
+        last_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 06:30:00") # 표준시로
+
+    #gap = 0.01
+    # gap = (vwap_band_gap * 0.618) / 100
+    # if gap > 0.03:
+    #     gap = 0.03
+    # if gap < 0.01:
+    #     gap = 0.01
+    gap = 0.01
+    zigzag_data = get_zigzag_data(dataframe, gap)
+
+    zigzag_points = zigzag_data.copy()
+    num, slopes, vwaps, peak_dt, valley_dt = vwc.get_day_open_2vwaps(zigzag_points=zigzag_points, input_data=dataframe, open_time=open_datetime, current_time=base_datetime)
+    vwap_high1_dataframe = vwaps[0]
+    vwap_high2_dataframe = vwaps[1]
+
+    yesterday_datetime_str = get_datetime_str(selected_idt, "15:30:00")
+    base_datetime_str = get_datetime_str(next_biz_day, "09:00:00")
+    last_datetime_str = get_datetime_str(next_biz_day, "15:20:00")
+    yesterday_datetime = datetime.strptime(yesterday_datetime_str, "%Y-%m-%d %H:%M:%S")
+    base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
+    last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+
+    start_below = False
+    try:
+        yesterday_close = dataframe[dataframe.index == yesterday_datetime_str].iloc[0]['close']
+        today_open = dataframe[dataframe.index == base_datetime_str].iloc[0]['open']
+        if today_open < yesterday_close and abs((yesterday_close - today_open) / today_open) * 100 >= 0.5 :
+            start_below = True
+    except Exception as e:
+        pass
+
+    incremented_datetime = base_datetime + timedelta(minutes=1)
+    incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    count_same_valley_datetime = 0
+    valley_datetime_old = None
+    valley_value = 0
+
+    first_buy = False
+    while incremented_datetime <= last_datetime:
+
+        data = dataframe[dataframe.index <= incremented_datetime_str].copy()
+        zigzag_points = get_zigzag_data(data, gap)
+
+        textout = ""
+        vwap_df, vwap_support_points, first_above_vwap_time, first_above_vwap_price = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, 
+                                                                                           peak_time=open_datetime, current_time=incremented_datetime,
+                                                                                           base_price='close')
+        # # 갭하락
+        # if first_above_vwap_time:
+        #     first_above_vwap_time_str = first_above_vwap_time.strftime("%H%M%S")
+        #     if not first_buy and start_below and first_above_vwap_time_str < '100000':
+        #         valley_datetime_old = first_above_vwap_time
+        #         valley_value = first_above_vwap_price
+        #         textout = f"{incremented_datetime} 일자:{next_biz_day} 매수:{first_above_vwap_price} {valley_value} 갭하락"
+        #         first_buy = True
+        #         st.text(textout)
+        #         break        
+
+        #vwap_high1_dataframe = vwap_df
+        if vwap_support_points is not None and not vwap_support_points.empty:
+            if current_locale[0] == "ko_KR":
+                try:
+
+                    if len(vwap_support_points) > 0:
+                        valley_points = vwap_support_points.tail(1)
+                        current_valley_time = valley_points.iloc[0]['valley_time']
+                        higher_low = valley_points.iloc[0]['higher_low']
+                        touch_condition_met = valley_points.iloc[0]['touch_condition_met']
+                        if valley_datetime_old is None:
+                            valley_datetime_old = current_valley_time
+                            count_same_valley_datetime += 1
+                        else:
+                            if valley_datetime_old != current_valley_time:
+                                valley_datetime_old = None
+                                count_same_valley_datetime = 0
+                            else:
+                                count_same_valley_datetime += 1
+
+                    if not first_buy and count_same_valley_datetime == 1 and touch_condition_met and higher_low is not None and higher_low:
+                        valley_value = valley_points.iloc[0]['valley_value']
+                        textout = f"{incremented_datetime} 일자:{next_biz_day} 매수:{current_valley_time} {valley_value}"
+                        first_buy = True
+                        st.text(textout)
+                        break
+                        
+                except Exception as e:
+                    if str(e) == 'single positional indexer is out-of-bounds':
+                        stextout = f"일자:{next_biz_day} 매수시점 없음"
+                    print(f"Error : {e}")
+            else:
+                try:
+
+                    current_valley_time = vwap_support_points.iloc[0]['valley_time']
+                    higher_low = vwap_support_points.iloc[0]['higher_low']
+                    if valley_datetime_old is None:
+                        valley_datetime_old = current_valley_time
+                        count_same_valley_datetime += 1
+                    else:
+                        if valley_datetime_old != current_valley_time:
+                            valley_datetime_old = None
+                            count_same_valley_datetime = 0
+                        else:
+                            count_same_valley_datetime += 1
+
+                    if not first_buy and count_same_valley_datetime == 1 and higher_low is not None and higher_low:
+                        first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("00:00:00").time()].iloc[0]
+                        valley_datetime = first_non_0900_valley['valley_time']
+                        valley_datetime += timedelta(hours=9)
+                        textout = f"{incremented_datetime} 일자:{next_biz_day} 매수:{valley_datetime} {first_non_0900_valley['valley_value']}     저점상승: {first_non_0900_valley['higher_low']}"
+                        first_buy = True
+                        st.text(textout)
+
+                except Exception as e:
+                    if str(e) == 'single positional indexer is out-of-bounds':
+                        textout = f"일자:{next_biz_day} 매수시점 없음"
+        else:
+            textout = f"일자:{next_biz_day} 매수시점 없음"
+
+        incremented_datetime += timedelta(minutes=1)
+        incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    """
+
+    # 저점이 상승하는 것만으로 매수
+    # valley_datetime_old = None
+    # valley_value = 0
+
+    # first_buy = False
+    # while incremented_datetime <= last_datetime:
+
+    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
+    #     zigzag_points = get_zigzag_data(data, gap)
+
+    #     textout = ""
+    #     vwap_support_points = vwc.find_most_recent_high_lower(zigzag_points=zigzag_points, input_data=dataframe, 
+    #                                                                                        peak_time=open_datetime, current_time=incremented_datetime,
+    #                                                                                        base_price='close')
+    #     #vwap_high1_dataframe = vwap_df
+    #     if vwap_support_points is not None and not vwap_support_points.empty:
+
+    #         if current_locale[0] == "ko_KR":
+    #             try:
+
+    #                 support_points = vwap_support_points.tail(1)
+    #                 current_valley_time = support_points.iloc[0]['valley_time']
+    #                 higher_low = support_points.iloc[0]['higher_low']
+    #                 if valley_datetime_old is None:
+    #                     valley_datetime_old = current_valley_time
+    #                     count_same_valley_datetime += 1
+    #                 else:
+    #                     if valley_datetime_old != current_valley_time:
+    #                         valley_datetime_old = None
+    #                         count_same_valley_datetime = 0
+    #                     else:
+    #                         count_same_valley_datetime += 1
+
+    #                 #if not first_buy and count_same_valley_datetime == 1 and higher_low is not None and higher_low:
+    #                 if not first_buy and count_same_valley_datetime == 1 and higher_low is not None and higher_low:
+    #                     valley_value = support_points.iloc[0]['valley_value']
+    #                     textout = f"{incremented_datetime} 일자:{next_biz_day} 매수:{current_valley_time} {valley_value}   저점상승: {higher_low}"
+    #                     first_buy = True
+    #                     st.text(textout)
+    #                     break
+                        
+    #             except Exception as e:
+    #                 if str(e) == 'single positional indexer is out-of-bounds':
+    #                     stextout = f"일자:{next_biz_day} 매수시점 없음"
+    #                 print(e)
+    #     else:
+    #         textout = f"일자:{next_biz_day} 매수시점 없음"
+
+    #     incremented_datetime += timedelta(minutes=1)
+    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+
+    """"
+    # 매도시점 시뮬레이션
+    if valley_datetime_old is not None:
+        valley_datetime_str = valley_datetime_old.strftime("%Y-%m-%d %H:%M:%S")
+
+        count_same_peak_datetime = 0
+        peak_datetime_old = None
+
+        while incremented_datetime <= last_datetime:
+
+            data = dataframe[(dataframe.index <= incremented_datetime_str)].copy()
+            zigzag_points = get_zigzag_data(data, gap)
+
+            last_data = data.tail(1)
+            close_price = last_data.iloc[0]['close']
+
+            calc_price_1band_below = valley_value * ((100 - vwap_band_gap) / 100)
+            calc_price_max_loss = int(valley_value * 0.9725)
+            calc_stoploss_price = max(calc_price_1band_below, calc_price_max_loss)
+
+            if close_price < calc_stoploss_price:
+                loss = (close_price - valley_value) / valley_value * 100
+                textout = f"{incremented_datetime} 일자:{next_biz_day} 손절: {close_price} 손실: {loss}%"
+                st.text(textout)
+                break                
+
+            most_recent_peak = vwc.find_most_recent_peak(zigzag_points)
+            if most_recent_peak is not None and not most_recent_peak.empty:
+                if current_locale[0] == "ko_KR":
+                    try:
+
+                        current_peak_time = most_recent_peak['time']
+                        peak_value = most_recent_peak['value']
+                        peak_valley_gap = (peak_value - valley_value) / valley_value * 100
+                        if current_peak_time > valley_datetime_str and peak_valley_gap >= vwap_band_gap * 0.8:                    
+                            if peak_datetime_old is None:
+                                peak_datetime_old = current_peak_time
+                                count_same_peak_datetime += 1
+                            else:
+                                if peak_datetime_old != current_peak_time:
+                                    peak_datetime_old = None
+                                    count_same_peak_datetime = 0
+                                else:
+                                    count_same_peak_datetime += 1
+
+                            if count_same_peak_datetime == 1:
+                                textout = f"{incremented_datetime} 일자:{next_biz_day} 매도:{most_recent_peak['time']} {peak_valley_gap} {most_recent_peak['value']}"
+                                st.text(textout)
+                                break
+                            
+                    except Exception as e:
+                        if str(e) == 'single positional indexer is out-of-bounds':
+                            stextout = f"일자:{next_biz_day} 매도시점 없음"
+                        print(f"Error: {e}")
+
+            incremented_datetime += timedelta(minutes=1)
+            incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    """
+
+    # base_datetime_str = get_datetime_str(next_biz_day, "09:00:00")
+    # last_datetime_str = get_datetime_str(next_biz_day, "15:20:00")
+    # base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # incremented_datetime = base_datetime + timedelta(minutes=1)
+    # incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    # vwap_high1_dataframe = pd.DataFrame()
+    # while incremented_datetime <= last_datetime:
+    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
+    #     zigzag_data = get_zigzag_data(data, gap = 0.01)
+
+    #     zigzag_points = zigzag_data.copy()
+    #     vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, 
+    #                                                                                        peak_time=base_datetime_str, current_time=incremented_datetime_str)
+    #     if vwap_support_points is not None and not vwap_support_points.empty:
+    #         #print(vwap_df, vwap_support_points, first_above_vwap_time)
+    #         print(incremented_datetime_str)
+    #         print(vwap_support_points)
+    #     vwap_high1_dataframe = vwap_df
+
+    #     incremented_datetime += timedelta(minutes=1)
+    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    # minute_data = dataframe[dataframe.index >= open_datetime].copy()
+    # minute_data.reset_index(inplace=True)
+    # minute_data['time'] = pd.to_datetime(minute_data['time'])
+    # minute_data.set_index('time', inplace=True)
+    # vwap_df = vwap_high1_dataframe.copy()
+    # vwap_df.set_index('time', inplace=True)
+    # #open_datetime = pd.to_datetime(open_datetime)
+    # base_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 09:05:00")
+    # first_above_vwap_time = vwc.find_first_above_vwap_time(minute_data=minute_data, vwap_df=vwap_df, start_time=base_datetime, base_price="close")
 
     #zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
