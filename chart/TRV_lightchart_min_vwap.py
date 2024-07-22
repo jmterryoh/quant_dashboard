@@ -216,13 +216,13 @@ def get_stock_chart(symbol
     last_datetime = ""
     current_locale = locale.getdefaultlocale()
     if current_locale[0] == "ko_KR":
-        open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
-        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
-        last_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
+        open_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        base_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 09:00:00")
+        last_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 15:30:00")
     else:
-        open_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
-        base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
-        last_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 06:30:00") # 표준시로
+        open_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 00:00:00")
+        base_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
+        last_datetime = datetime.strptime(next_biz_day, "%Y%m%d").strftime("%Y-%m-%d 06:30:00") # 표준시로
 
 
     zigzag_points = zigzag_data.copy()
