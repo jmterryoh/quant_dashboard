@@ -788,8 +788,6 @@ def main():
             today = datetime.now().strftime("%Y%m%d")
         if next_biz_day > today:
             next_biz_day = selected_idt
-        st.text(today)
-        st.text(next_biz_day)
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
                                                 , selected_idt = selected_idt
                                                 , next_biz_day = next_biz_day
