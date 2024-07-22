@@ -785,7 +785,8 @@ def main():
         if next_biz_day > today:
             next_biz_day = selected_idt
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
-                                                , selected_idt = next_biz_day
+                                                , selected_idt = selected_idt
+                                                , next_biz_day = next_biz_day
                                                 , dataframe=tvdata
                                                 , vwap_dataframe=vwap_df
                                                 , vwap_band_gap = band_gap
