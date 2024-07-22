@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import pytz
+import locale
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import session as ss
 from util import screen as sc
@@ -780,8 +781,11 @@ def main():
             col61, col62 = st.columns(2)
  
         show_volume = False
-        next_biz_day = get_next_business_day(selected_idt)
+        next_biz_day = get_next_business_day(selected_idt)        
         today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
+        current_locale = locale.getdefaultlocale()
+        if current_locale[0] == "ko_KR":
+            today = datetime.now().strftime("%Y%m%d")
         if next_biz_day > today:
             next_biz_day = selected_idt
         click_events_dy = chart.get_stock_chart(  symbol=stock_code
