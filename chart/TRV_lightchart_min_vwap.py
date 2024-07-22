@@ -239,7 +239,7 @@ def get_stock_chart(symbol
                 higher_low = valley_points.iloc[0]['higher_low']
                 touch_condition_met = valley_points.iloc[0]['touch_condition_met']
 
-                if current_locale[0] == "ko_KR":
+                if current_locale[0] != "ko_KR":
                     current_valley_time += timedelta(hours=9)
 
                 if touch_condition_met:
