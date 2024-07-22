@@ -244,7 +244,7 @@ def get_stock_chart(symbol
 
                 if touch_condition_met:
                     valley_value = valley_points.iloc[0]['valley_value']
-                    textout = f"{current_valley_time} 일자:{next_biz_day} 매수:{current_valley_time} {valley_value}"
+                    textout = f"일자:{next_biz_day} 매수:{current_valley_time} {valley_value}"
                     st.text(textout)
                 
         except Exception as e:
