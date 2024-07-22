@@ -125,6 +125,7 @@ def find_latest_valley(zigzag_data):
 
 def get_stock_chart(symbol
                    , selected_idt
+                   , next_biz_day
                    , dataframe
                    , vwap_dataframe
                    , vwap_band_gap
@@ -208,32 +209,6 @@ def get_stock_chart(symbol
 
     # Initial zigzag data and latest valley detection
     zigzag_data = get_zigzag_data(dataframe, gap)
-    # latest_valley_time, latest_valley_value = find_latest_valley(zigzag_data)
-    # previous_valley_value = latest_valley_value
-
-    # if latest_valley_time is not None:
-    #     print(f"Latest valley detected at {latest_valley_time} with value {latest_valley_value}")
-
-    # incremented_datetime = base_datetime + timedelta(minutes=1)
-    # incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-    # while incremented_datetime <= last_datetime:
-    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
-    #     zigzag_data = get_zigzag_data(data, gap)
-
-    #     # Update and check for the latest valley
-    #     nt1, nv1 = find_latest_valley(zigzag_data)
-
-    #     if nt1 is not None:
-    #         if previous_valley_value is None or nv1 <= previous_valley_value:
-    #             previous_valley_value = nv1
-    #             latest_valley_time, latest_valley_value = nt1, nv1
-    #             print(f"Latest valley updated to {latest_valley_time} with value {latest_valley_value}")
-
-    #     incremented_datetime += timedelta(minutes=1)
-    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-
 
     # Get the current locale setting
     base_datetime = ""
@@ -249,68 +224,37 @@ def get_stock_chart(symbol
         base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 00:00:00") # 표준시로
         last_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 06:30:00") # 표준시로
 
-    # zigzag_points = zigzag_data.copy()
-    # num, slopes, vwaps, peak_dt, valley_dt = vwc.get_day_open_2vwaps(zigzag_points=zigzag_points, input_data=dataframe, open_time=open_datetime, current_time=base_datetime)
-    # vwap_high1_dataframe = vwaps[0]
-    # vwap_high2_dataframe = vwaps[1]
 
     zigzag_points = zigzag_data.copy()
-    vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, peak_time=open_datetime, current_time=last_datetime)
+    vwap_df, vwap_support_points, first_above_vwap_time, first_above_vwap_price = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, 
+                                                                                                               peak_time=open_datetime, current_time=last_datetime,
+                                                                                                               base_price='close')
     vwap_high1_dataframe = vwap_df
     if vwap_support_points is not None and not vwap_support_points.empty:
-        if current_locale[0] == "ko_KR":
-            try:
-                first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("09:00:00").time()].iloc[0]
-                st.text(f"일자:{selected_idt} 매수:{first_non_0900_valley['valley_time']} {first_non_0900_valley['valley_value']}     vwap 기울기: {first_non_0900_valley['vwap_slope']}")
-            except Exception as e:
-                if str(e) == 'single positional indexer is out-of-bounds':
-                    st.text(f"일자:{selected_idt} 매수시점 없음")
-        else:
-            try:
-                first_non_0900_valley = vwap_support_points[vwap_support_points['valley_time'].dt.time != pd.to_datetime("00:00:00").time()].iloc[0]
-                valley_datetime = first_non_0900_valley['valley_time']
-                valley_datetime += timedelta(hours=9)
-                st.text(f"일자:{selected_idt} 매수:{valley_datetime} {first_non_0900_valley['valley_value']}     vwap 기울기: {first_non_0900_valley['vwap_slope']}")
-            except Exception as e:
-                if str(e) == 'single positional indexer is out-of-bounds':
-                    st.text(f"일자:{selected_idt} 매수시점 없음")
+        try:
+
+            if len(vwap_support_points) > 0:
+                valley_points = vwap_support_points.tail(1)
+                current_valley_time = valley_points.iloc[0]['valley_time']
+                higher_low = valley_points.iloc[0]['higher_low']
+                touch_condition_met = valley_points.iloc[0]['touch_condition_met']
+
+                if current_locale[0] == "ko_KR":
+                    current_valley_time += timedelta(hours=9)
+
+                if touch_condition_met:
+                    valley_value = valley_points.iloc[0]['valley_value']
+                    textout = f"{current_valley_time} 일자:{next_biz_day} 매수:{current_valley_time} {valley_value}"
+                    st.text(textout)
+                
+        except Exception as e:
+            textout = f"일자:{next_biz_day} 매수시점 없음"
+            st.text(textout)
+            print(f"Error : {e}")
+
     else:
         st.text(f"일자:{selected_idt} 매수시점 없음")
 
-
-    # base_datetime_str = get_datetime_str(selected_idt, "09:00:00")
-    # last_datetime_str = get_datetime_str(selected_idt, "15:20:00")
-    # base_datetime = datetime.strptime(base_datetime_str, "%Y-%m-%d %H:%M:%S")
-    # last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
-    # incremented_datetime = base_datetime + timedelta(minutes=1)
-    # incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-    # vwap_high1_dataframe = pd.DataFrame()
-    # while incremented_datetime <= last_datetime:
-    #     data = dataframe[dataframe.index <= incremented_datetime_str].copy()
-    #     zigzag_data = get_zigzag_data(data, gap = 0.01)
-
-    #     zigzag_points = zigzag_data.copy()
-    #     vwap_df, vwap_support_points, first_above_vwap_time = vwc.find_vwap_support_points(zigzag_points=zigzag_points, input_data=dataframe, 
-    #                                                                                        peak_time=base_datetime_str, current_time=incremented_datetime_str)
-    #     if vwap_support_points is not None and not vwap_support_points.empty:
-    #         #print(vwap_df, vwap_support_points, first_above_vwap_time)
-    #         print(incremented_datetime_str)
-    #         print(vwap_support_points)
-    #     vwap_high1_dataframe = vwap_df
-
-    #     incremented_datetime += timedelta(minutes=1)
-    #     incremented_datetime_str = incremented_datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-    # minute_data = dataframe[dataframe.index >= open_datetime].copy()
-    # minute_data.reset_index(inplace=True)
-    # minute_data['time'] = pd.to_datetime(minute_data['time'])
-    # minute_data.set_index('time', inplace=True)
-    # vwap_df = vwap_high1_dataframe.copy()
-    # vwap_df.set_index('time', inplace=True)
-    # #open_datetime = pd.to_datetime(open_datetime)
-    # base_datetime = datetime.strptime(selected_idt, "%Y%m%d").strftime("%Y-%m-%d 09:05:00")
-    # first_above_vwap_time = vwc.find_first_above_vwap_time(minute_data=minute_data, vwap_df=vwap_df, start_time=base_datetime, base_price="close")
 
     #zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
     zigzag_data['time'] = zigzag_data['time'].apply(string_datetime_to_timestamp)
