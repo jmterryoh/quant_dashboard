@@ -253,7 +253,7 @@ def get_stock_chart(symbol
             print(f"Error : {e}")
 
     else:
-        st.text(f"일자:{selected_idt} 매수시점 없음")
+        st.text(f"일자:{next_biz_day} 매수시점 없음")
 
 
     #zigzag_data = zz.get_zigzag_lines(dataframe, base_price="close", window_size=10, std_threshold=0.01)
