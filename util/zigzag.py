@@ -247,50 +247,39 @@ def simplify_zigzag(df, gap=1.0):
 
     return df_cleaned
 
-def calculate_zigzag_threshold(base_prices, threshold=0.01):
-    """
-    Calculate the Zig-Zag pivot points for a given list of base prices.
-
-    Args:
-        base_prices (list): List of price values.
-        threshold (float): Minimum percentage change required to identify a new pivot.
-
-    Returns:
-        List of tuples: Each tuple contains (index, price, 'peak' or 'valley').
-    """
+def calculate_zigzag_threshold(base_prices, threshold=0.01, delay=1):
     pivot_points = []
     current_peak = float('-inf')
     current_valley = float('inf')
     current_pivot_type = None
 
-    for i in range(len(base_prices) - 1):
+    for i in range(len(base_prices) - delay):
         current_close = base_prices[i]
-        next_close = base_prices[i + 1]
+        next_closes = base_prices[i + 1:i + delay + 1]
 
         if current_pivot_type is None:
             current_peak = current_valley = current_close
             current_peak_i = current_valley_i = i
-            current_pivot_type = 'peak' if current_close > next_close else 'valley'
+            current_pivot_type = 'peak' if current_close > next_closes[0] else 'valley'
         elif current_pivot_type == 'peak':
             if current_close >= current_peak:
                 current_peak_i = i
                 current_peak = current_close
-            elif current_close < current_peak * (1 - threshold):
+            elif all(next_close < current_peak * (1 - threshold) for next_close in next_closes):
                 pivot_points.append((current_peak_i, current_peak, 'peak'))
-                current_valley_i = i
-                current_valley = current_close
+                current_valley_i = i + 1
+                current_valley = next_closes[0]
                 current_pivot_type = 'valley'
         elif current_pivot_type == 'valley':
             if current_close <= current_valley:
                 current_valley_i = i
                 current_valley = current_close
-            elif current_close > current_valley * (1 + threshold):
+            elif all(next_close > current_valley * (1 + threshold) for next_close in next_closes):
                 pivot_points.append((current_valley_i, current_valley, 'valley'))
-                current_peak_i = i
-                current_peak = current_close
+                current_peak_i = i + 1
+                current_peak = next_closes[0]
                 current_pivot_type = 'peak'
     
-    # Append the last pivot point
     if current_pivot_type == 'peak':
         pivot_points.append((current_peak_i, current_peak, 'peak'))
     elif current_pivot_type == 'valley':
@@ -298,7 +287,7 @@ def calculate_zigzag_threshold(base_prices, threshold=0.01):
     
     return pivot_points
 
-def get_zigzag_threshold(df, base_price="Close", threshold=0.01):
+def get_zigzag_threshold(df, base_price="Close", threshold=0.01, delay=1):
     """
     Get Zig-Zag pivot points and return them in a DataFrame.
 
@@ -313,7 +302,7 @@ def get_zigzag_threshold(df, base_price="Close", threshold=0.01):
     data_df = df[f"{base_price}"].values
     dates = df.index
 
-    zigzag_pivots = calculate_zigzag_threshold(base_prices=data_df, threshold=threshold)
+    zigzag_pivots = calculate_zigzag_threshold(base_prices=data_df, threshold=threshold, delay=delay)
     zigzag_lines_data = []
     for pivot in zigzag_pivots:
         zigzag_lines_data.append({"time": dates[pivot[0]], "value": pivot[1], "pivot": pivot[2]})
@@ -324,3 +313,22 @@ def get_zigzag_threshold(df, base_price="Close", threshold=0.01):
 
     return pd.DataFrame(zigzag_lines_data)
 
+
+def backtest_zigzag(df, base_price="Close", threshold=0.01, delay_values=range(1, 20)):
+    results = []
+    data_df = df[f"{base_price}"].values
+    dates = df.index
+
+    for delay in delay_values:
+        zigzag_pivots = calculate_zigzag_threshold(base_prices=data_df, threshold=threshold, delay=delay)
+        # Calculate performance based on zigzag_pivots (this is a simplified example)
+        profit = 0
+        for i in range(1, len(zigzag_pivots)):
+            if zigzag_pivots[i-1][2] == 'valley' and zigzag_pivots[i][2] == 'peak':
+                profit += zigzag_pivots[i][1] - zigzag_pivots[i-1][1]
+            elif zigzag_pivots[i-1][2] == 'peak' and zigzag_pivots[i][2] == 'valley':
+                profit += zigzag_pivots[i-1][1] - zigzag_pivots[i][1]
+        results.append((delay, profit))
+    
+    best_delay = max(results, key=lambda x: x[1])[0]
+    return best_delay, results

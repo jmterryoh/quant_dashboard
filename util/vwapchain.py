@@ -261,12 +261,21 @@ def get_day_open_2vwaps(zigzag_points, input_data, open_time, current_time):
 
 
 # 가장 최근의 zigzag 피크와 밸리 찾기
-def find_recent_zigzag_points(zigzag_df, start_time, end_time):
+def find_recent_zigzag_points(zigzag_df, start_time, end_time, prior_points_count=2):
     start_time = pd.to_datetime(start_time)
     end_time = pd.to_datetime(end_time)
     zigzag_df['time'] = pd.to_datetime(zigzag_df['time'])
-    recent_points = zigzag_df[(zigzag_df['time'] >= start_time) & (zigzag_df['time'] <= end_time)]
-    return recent_points
+
+    # Find the specified number of Zig-Zag points immediately before the start time
+    prior_points = zigzag_df[zigzag_df['time'] <= start_time].tail(prior_points_count)
+
+    # Find the Zig-Zag points within the specified time range
+    recent_points = zigzag_df[(zigzag_df['time'] > start_time) & (zigzag_df['time'] <= end_time)]
+    
+    # Combine the prior points and recent points
+    combined_points = pd.concat([prior_points, recent_points]).reset_index(drop=True)
+
+    return combined_points    
 
 # 정규화된 VWAP 기울기 계산 함수
 def calculate_normalized_vwap_slope(vwap_df):
@@ -299,12 +308,12 @@ def check_vwap_touch(valley_time, minute_data, vwap_df, base_price='close', tole
     #     return True
     #return abs(valley_price - vwap_price) / vwap_price <= tolerance
     diff = (valley_price - vwap_price) / vwap_price
-    return (diff > 0  and abs(diff) <= tolerance) or (diff < 0  and abs(diff) <= 0.002)
+    return (diff > 0  and abs(diff) <= tolerance) or (diff < 0  and abs(diff) <= tolerance * 2)
 
 # peak_time 이후 VWAP 값보다 close 값이 큰 최초의 시간을 찾는 함수
-def find_first_above_vwap_time(minute_data, vwap_df, start_time, base_price):
+def find_first_above_vwap_time(minute_data, vwap_df, start_time, base_price, threshold=1.002):
     for time in vwap_df.index:
-        if time >= start_time and minute_data.loc[time, f'{base_price}'] > vwap_df.loc[time, 'vwap']:
+        if time >= start_time and minute_data.loc[time, f'{base_price}'] > vwap_df.loc[time, 'vwap'] * threshold:
             price = minute_data.loc[time, f'{base_price}']
             return time, price
     return None, None
@@ -351,26 +360,35 @@ def determine_market_phase(recent_zigzag_points):
 # vwap 터치할 때 양봉 tolerance 1.5%
 def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time, base_price):
 
-    # Extract minute data starting from peak_time
-    minute_data = input_data[input_data.index >= peak_time].copy()
+    # Find recent zigzag peaks and valleys
+    subsequent_zigzag_points = find_recent_zigzag_points(zigzag_points, peak_time, current_time, prior_points_count=2)
+
+    # peak_time 직전의 valley time 찾고 anchor_time 설정
+    prior_peak_time = peak_time
+    if subsequent_zigzag_points is not None and not subsequent_zigzag_points.empty:
+        zigzag_first = subsequent_zigzag_points.head(1)
+        #vally -> peak 순이면 peak 를 peak ->valley 순이면 valley 를 선택
+        if zigzag_first.iloc[0]['pivot'] == 'valley':
+            prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'peak'].iloc[0]['time'])
+        else:
+            prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].iloc[0]['time'])
+    
+    # Extract minute data starting from anchor_time
+    minute_data = input_data[input_data.index >= prior_peak_time].copy()
     minute_data.reset_index(inplace=True)
     minute_data['time'] = pd.to_datetime(minute_data['time'])
 
-    anchor_time = pd.to_datetime(peak_time)
-    
     # Calculate VWAP
+    anchor_time = pd.to_datetime(prior_peak_time)
     vwap_df = calculate_vwap(minute_data, anchor_time, base_price=base_price)
 
     # Set the time column as index
     vwap_df.set_index('time', inplace=True)
     minute_data.set_index('time', inplace=True)
 
-    # Find recent zigzag peaks and valleys
-    subsequent_zigzag_points = find_recent_zigzag_points(zigzag_points, peak_time, current_time)
-
     # Find the first valley time after the peak
     first_valley_time = None
-    if not subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].empty:
+    if subsequent_zigzag_points is not None and not subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].empty:
         first_valley_time = subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].iloc[0]['time']
     
     # Find the first time the price is above the VWAP after the first valley
@@ -380,9 +398,12 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time,
         first_above_vwap_time, first_above_vwap_price = find_first_above_vwap_time(minute_data=minute_data, vwap_df=vwap_df, start_time=first_valley_time, base_price=base_price)
 
     results = []
-    valid_valleys = subsequent_zigzag_points[(subsequent_zigzag_points['pivot'] == 'valley')]
+    valid_valleys = pd.DataFrame()
+    if subsequent_zigzag_points is not None:
+        valid_valleys = subsequent_zigzag_points[(subsequent_zigzag_points['pivot'] == 'valley')]
     
     previous_valley_value = None
+    previous_valley_time = None
     is_value_increasing = None
 
     for _, row in valid_valleys.iterrows():
@@ -393,13 +414,35 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time,
             if previous_valley_value is not None:
                 is_value_increasing = current_valley_value > previous_valley_value * 1.005
                 if is_value_increasing:
-                    current_price = minute_data.iloc[-1][base_price]  # 현재 가격
-                    if current_price <= current_valley_value * 1.005:  # 현재 가격이 최신 valley 값보다 0.5% 이상 커야 함
+                    # Find the peak between the previous and current valley
+                    peaks_between = subsequent_zigzag_points[
+                        (subsequent_zigzag_points['time'] > previous_valley_time) &
+                        (subsequent_zigzag_points['time'] < peak_valley_time) &
+                        (subsequent_zigzag_points['pivot'] == 'peak')
+                    ]
+                    if not peaks_between.empty:
+                        max_peak_value = peaks_between['value'].max()
+                        max_peak_time = peaks_between[peaks_between['value'] == max_peak_value]['time'].values[0]
+                        if max_peak_value <= vwap_df.loc[max_peak_time, 'vwap']:  # Check if the peak is greater than VWAP
+                            is_value_increasing = False
+                    else:
                         is_value_increasing = False
+                    
+                    try:
+                        current_price = minute_data[minute_data.index <= current_time].iloc[-1][base_price]  # 현재 가격
+                        #if current_price <= current_valley_value * 1.005:  # 현재 가격이 최신 valley 값보다 0.5% 이상 커야 함
+                        if current_price <= current_valley_value * 1.000:  # 현재 가격이 최신 valley 값보다 커야 함
+                            is_value_increasing = False
+                    except Exception as e:
+                        current_price = minute_data.iloc[-1][base_price]
+                        #if current_price <= current_valley_value * 1.005:  # 현재 가격이 최신 valley 값보다 0.5% 이상 커야 함
+                        if current_price <= current_valley_value * 1.000:  # 현재 가격이 최신 valley 값보다 커야 함
+                            is_value_increasing = False
             else:
                 is_value_increasing = None  # First valley, no previous value to compare
          
             previous_valley_value = current_valley_value  # Update previous valley value
+            previous_valley_time = peak_valley_time
             
             touch_condition_met = False
             if is_value_increasing:  # Check VWAP touch only if the value is increasing
