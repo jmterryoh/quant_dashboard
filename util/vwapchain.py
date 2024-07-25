@@ -365,13 +365,13 @@ def find_vwap_support_points(zigzag_points, input_data, peak_time, current_time,
 
     # peak_time 직전의 valley time 찾고 anchor_time 설정
     prior_peak_time = peak_time
-    if subsequent_zigzag_points is not None and not subsequent_zigzag_points.empty:
-        zigzag_first = subsequent_zigzag_points.head(1)
-        #vally -> peak 순이면 peak 를 peak ->valley 순이면 valley 를 선택
-        if zigzag_first.iloc[0]['pivot'] == 'valley':
-            prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'peak'].iloc[0]['time'])
-        else:
-            prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].iloc[0]['time'])
+    # if subsequent_zigzag_points is not None and not subsequent_zigzag_points.empty:
+    #     zigzag_first = subsequent_zigzag_points.head(1)
+    #     #vally -> peak 순이면 peak 를 peak ->valley 순이면 valley 를 선택
+    #     if zigzag_first.iloc[0]['pivot'] == 'valley':
+    #         prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'peak'].iloc[0]['time'])
+    #     else:
+    #         prior_peak_time = str(subsequent_zigzag_points[subsequent_zigzag_points['pivot'] == 'valley'].iloc[0]['time'])
     
     # Extract minute data starting from anchor_time
     minute_data = input_data[input_data.index >= prior_peak_time].copy()
