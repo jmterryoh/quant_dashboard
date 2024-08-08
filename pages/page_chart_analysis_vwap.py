@@ -182,25 +182,10 @@ def get_tvdata_from_vdt(stock_code, stock_name, selected_minutes, vdt, days_more
     return None
 
 # Anchored VWAP 
-def calculate_anchored_vwap(df, anchor_string_date, anchor_base, price_base, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
-
-    start_time = anchor_string_date + "000000"
-    #end_time = anchor_string_date + "235959"
-    end_time = increase10_string_date + "235959"  # anchor_datetime 시점변경: anchor 탐지일 ~ 장대양봉일
-
-    oneday_df = df.loc[(start_time <= df.index) & (df.index <= end_time)].copy()
-    #oneday_df.set_index('datetime', inplace=True)
-
-    anchor_datetime = ""
-    if anchor_base == "min":
-        anchor_datetime = oneday_df[price_base].idxmin()
-    elif anchor_base == "max":
-        anchor_datetime = oneday_df[price_base].idxmax()
-
-    #print(start_time, end_time, anchor_datetime)
+def calculate_anchored_vwap(df, anchor_string_datetime, anchor_base, price_base, multiplier1, multiplier2, multiplier3, multiplier4):
 
     # Use .loc[] to avoid setting values on a slice of DataFrame
-    df1 = df.loc[df.index >= anchor_datetime].copy()
+    df1 = df.loc[df.index >= anchor_string_datetime].copy()
     #df1.set_index('datetime', inplace=True)
  
     # VWAP 계산
@@ -298,12 +283,12 @@ def calculate_vwap_only(df, vwap_name, price_base, volume_base):
 
     return df
 
-def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_date, price_base, increase10_string_date, multiplier1, multiplier2, multiplier3, multiplier4):
+def anchored_vwap_to_database(price_df, stock_code, stock_name, anchor_string_datetime, price_base, multiplier1, multiplier2, multiplier3, multiplier4):
     try:
         # 1. VWAP 계산(종가기준)
         # 0.003초 소요
         diff = 0.0
-        vwap_df = calculate_anchored_vwap(df=price_df, anchor_string_date=anchor_string_date, anchor_base="min", price_base=price_base, increase10_string_date=increase10_string_date,
+        vwap_df = calculate_anchored_vwap(df=price_df, anchor_string_datetime=anchor_string_datetime, anchor_base="min", price_base=price_base,
                                           multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
         vwap_df.fillna(0, inplace=True) # NaN 을 0으로 변경
         df = vwap_df.tail(1)
@@ -513,297 +498,264 @@ def main():
     band_gap = 0
     selected_idt = ""
 
-    with st.container():
+    try:
+        with st.container():
 
-        init_session_control_values()
-    
-        reload = False
-
-        # 체크박스와 날짜선택박스를 포함하는 4개의 컬럼 생성
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
+            init_session_control_values()
         
-        with col1:
-            detected_dates = get_detected_dates(year_from=2024, month_from=6, day_from=1)
-            selected_idt = st.selectbox(label="탐지일 선택", options=detected_dates, key="d_dates")
+            reload = False
 
-        with col2:
-            if selected_idt:
-                success, stocknames, stocklist_df = get_detected_stocks(idt = selected_idt)
-                if success:
-                    selected_stockname = st.selectbox('주식종목 선택', stocknames, key="stock", on_change=on_change_stock)
-                    if selected_stockname:
-                        stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'code']].values
-                        stock_code = stock[0][1]+"."+stock[0][0]
-                        stock_code_only = stock[0][1]
-                        stock_name = selected_stockname
-                        stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'idt', 'i10dt', 'vdt', 'pattern']].values
-                        market, idt, i10dt, vdt, pattern = stock[0][0], stock[0][1], stock[0][2], stock[0][3], stock[0][4]
-
-        with col3:
-            col31, col32 = st.columns(2)
-            if selected_stockname:
-                with col31:
-                    ema_A_length = 5 if col31.toggle(label="5 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
-                    ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
-                    pass
-                with col32:
-                    ema_C_length = 60 if col32.toggle(label="60 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
-                    ema_D_length = 381 if col32.toggle(label="381 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
-        with col4:
-            col41, col42 = st.columns(2)
-            with col41:
-                #dt = datetime.strptime(vdt, "%Y%m%d")
-                #string_date = dt.strftime('%Y-%m-%d')
-                if pattern:
-                    st.text_input('조검검색', value=pattern, disabled=True, key="valley_date")
-            with col42:
-                if i10dt:
-                    dt = datetime.strptime(i10dt, "%Y%m%d")
-                    string_date = dt.strftime('%Y-%m-%d')
-                    st.text_input('장대양봉일', value=string_date, disabled=True, key="increase10_date")
-        with col5:
-            col51, col52 = st.columns(2)
-            with col51:
-                if idt:
-                    dt = datetime.strptime(idt, "%Y%m%d")
-                    string_date = dt.strftime('%Y-%m-%d')
-                    st.text_input('탐지일', value=string_date, disabled=True, key="detected_date")
-        with col6:
-            col61, col62 = st.columns(2)
-            with col61:
-                if vdt:
-                    vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt, "%Y%m%d"))
-                    today = datetime.now(pytz.timezone('Asia/Seoul'))
-                    vdt_one_week_ago = vdt_date - timedelta(days=0)
-                    days_difference = (today - vdt_one_week_ago).days
-                    selected_minutes = st.selectbox('분봉 선택', index=0, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
-                    if selected_minutes:
-                        if selected_minutes == '1분':
-                            data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
-                            interval = Interval.in_1_minute
-                        elif selected_minutes == '3분':
-                            data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
-                            interval = Interval.in_3_minute
-                        elif selected_minutes == '5분':
-                            data_count = days_difference * 90 + 2 * 90 # 5분봉 기준 1시간: 12개, 7.5시간: 90
-                            interval = Interval.in_5_minute
-                        elif selected_minutes == '15분':
-                            data_count = days_difference * 30 + 4 * 30 # 15분봉 기준 1시간: 4개, 7.5시간: 30
-                            interval = Interval.in_15_minute
-                        elif selected_minutes == '30분':
-                            data_count = days_difference * 15 + 5 * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
-                            interval = Interval.in_30_minute
-                        elif selected_minutes == '1시간':
-                            data_count = days_difference * 8 + 6 * 8 # 1시간 기준 1시간: 1개, 7.5시간: 8
-                            interval = Interval.in_1_hour
-                        elif selected_minutes == '1일':
-                            data_count = days_difference + 50  # 1일 기준, 1개
-                            interval = Interval.in_daily
-            with col62:
-                if selected_stockname:
-                    dummy_ma = 0 if col62.toggle(label="00 BB", key="DM", disabled=True, label_visibility="hidden") else 0
-                    bollinger_ma = 33 if col62.toggle(label="33 BB", key="BB", value=BB, on_change=on_change_BB) else 0
-                    if interval == Interval.in_1_minute:
-                        bollinger_ma = int(bollinger_ma * 5 / 1)
-                    elif interval == Interval.in_3_minute:
-                        bollinger_ma = int(bollinger_ma * 5 / 3)
-                    elif interval == Interval.in_5_minute:
-                        bollinger_ma = int(bollinger_ma * 5 / 5)
-                    elif interval == Interval.in_15_minute:
-                        bollinger_ma = int(bollinger_ma * 5 / 15)
-                    elif interval == Interval.in_30_minute:
-                        if bollinger_ma > 0:
-                            bollinger_ma = 20
-                    elif interval == Interval.in_1_hour:
-                        if bollinger_ma > 0:
-                            bollinger_ma = 10
-                    elif interval == Interval.in_daily:
-                        if bollinger_ma > 0:
-                            bollinger_ma = 5
-
-
-        if data_count is None:
-            return
-        
-        # for index, row in stocklist_df.iterrows():
-
-        #     market, idt, i10dt, vdt, pattern = row['market'], row['idt'], row['i10dt'], row['vdt'], row['pattern']
-        #     stock_code_only = row['code']
-        #     stock_name = row['name']
-
-        # 체크박스와 날짜선택박스 변수 초기화
-        vwap_param = {}
-
-        #df = yf.fetch_stock_data(symbol=stock_code, period="10d", interval="5m")
-        #df.index.name = "Date"
-
-        # 1. Tradingview 에서 과거 분봉데이터 가져오기
-        vwap_df = pd.DataFrame()
-        bollinger_df = pd.DataFrame()
-        tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
-        if tvdata is not None and not tvdata.empty:
-
-            # datatime 형식을 string 형식으로 변환
-            tvdata = tvdata.reset_index()
-            tvdata['time'] = tvdata['datetime'].dt.strftime('%Y%m%d%H%M%S')
-            tvdata.set_index('time', inplace=True)
-            tvdata.sort_index()
-            tvdata['symbol'] = tvdata['symbol'].apply(lambda x: x.split(':')[1])  # symbol 값 KRX:329180 형식
-
-            valley_string_datetime = vdt + "000000"
-            price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
-
-            # 2. vwap 계산 후 return
-            success, df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, price_base="low", anchor_string_date=vdt,
-                                                              increase10_string_date=i10dt, multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
-            if success:
-                df.drop(columns=['symbol'], inplace=True)
-                df.reset_index(inplace=True)
-                del df['time']
-                df.rename(columns={'datetime':'time'}, inplace=True)
-                df['time'] = df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
-                df.set_index('time', inplace=True)
-                vwap_df = df
-
-                with col52:
-                    st.text_input('밴드갭', value=f"{band_gap}%", disabled=True, key="band_gap")
-
-            # 3. Bollinger band 계산 후 return
-            success, bollinger_df = calculate_bollinger_bands(price_df=price_df, window=bollinger_ma, multiplier2=multiplier2, multiplier4=multiplier4)
-            if success:
-                bollinger_df.drop(columns=['symbol'], inplace=True)
-                bollinger_df.reset_index(inplace=True)
-                del bollinger_df['time']
-                bollinger_df.rename(columns={'datetime':'time'}, inplace=True)
-                bollinger_df['time'] = bollinger_df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
-                bollinger_df.set_index('time', inplace=True)
-                #print(bollinger_df)
-
-            tvdata.drop(columns=['symbol'], inplace=True)
-            tvdata.reset_index(inplace=True)
-            del tvdata['time']
-            tvdata.rename(columns={'datetime':'time'}, inplace=True)
-            tvdata['time'] = tvdata['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
-            tvdata.set_index('time', inplace=True)
-
-        len_df = len(tvdata)
-        if len_df <= ema_A_length: ema_A_length = 0
-        if len_df <= ema_B_length: ema_B_length = 0
-        if len_df <= ema_C_length: ema_C_length = 0
-        if len_df <= ema_D_length: ema_D_length = 0
-        if len_df <= bollinger_ma: bollinger_ma = 0
-        
-        ema_param = {}
-        if ema_A_length > 0:
-            ema_param.update({'EMA_A': {'length': ema_A_length, 'color': 'orange', 'linewidth': 2}})
-        if ema_B_length > 0:
-            #ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 2}})
-            ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'orange', 'linewidth': 2}})
-        if ema_C_length > 0:
-            ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 2}})
-        if ema_D_length > 0:
-            ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 2}})
-
-        indicators_params = {'ema': ema_param, 'vwap': vwap_param}
-
-        # 장대양봉일 이후(매수 모니터링 시작일) 분봉데이터 추출, 일봉데이터와 합쳐서 일봉기준 vwap 계산에 사용
-        idt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-        idt_string_datetime = idt_string_datetime.replace(hour=0, minute=0, second=0)
-        idt_string_datetime = idt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        price_idt_df = tvdata.loc[tvdata.index >= idt_string_datetime].copy()
-        #price_idt_df.reset_index(inplace=True)
-        #price_idt_df.rename(columns={'open':'Open', 'high':'High', 'low':'Low', 'close':'Close', 'volume':'Volume'}, inplace=True)
-        #price_idt_df.set_index('time', inplace=True)
-        #price_idt_df.index.name = 'Date'
-        #print(price_idt_df)
-
-        # 직전저점 vwap
-        vwap_1day_df = pd.DataFrame()
-        previous_vdt, price_1day_df = zz.get_previous_valley_datetime(stock_code=stock_code_only, stock_name=stock_name, vdt=vdt, base_price="close", days_before=5)
-
-        # 직전저점(previous_vdt)과 저점(vdt)사이의 고점
-        vwap_high2_dataframe = pd.DataFrame()
-
-        # 장대양봉일부터 최고점
-        vwap_highest_dataframe = pd.DataFrame()
-
-        # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
-        if previous_vdt:
-
-            pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
-            price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=False)
-
-            price_pvdt_df = price_1day_df.loc[price_1day_df.index >= previous_vdt].copy()
-            price_pvdt_df = price_pvdt_df.reset_index()
-            price_pvdt_df['time'] = price_pvdt_df['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
-            price_pvdt_df.set_index('time', inplace=True)
-            #price_pvdt_df = pd.concat([price_pvdt_df, price_idt_df])
-
-            vwap_1day_df = calculate_vwap_bands(df=price_pvdt_df, anchor_base="min", anchor_date=previous_vdt, price_base="low", volume_base='volume', vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
-            # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
-            vwap_1day_df = vwap_1day_df.reset_index()
-            #vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
-
-
-            # vwap_high2_dataframe 직전저점(previous_vdt)과 저점(vdt)사이의 고점
-            i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-            i10dt_string_datetime = i10dt_string_datetime.replace(hour=0, minute=0, second=0)
-            i10dt_string_datetime = i10dt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            pvdt_string_datetime = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S")
-            pvdt_string_datetime = pvdt_string_datetime.replace(hour=0, minute=0, second=0)
-            pvdt_string_datetime = pvdt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            # 체크박스와 날짜선택박스를 포함하는 4개의 컬럼 생성
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
             
-            price_pvdt_df = tvdata.loc[(tvdata.index >= pvdt_string_datetime) & (tvdata.index < i10dt_string_datetime)].copy()
-            price_high_index = price_pvdt_df['high'].idxmax() # 고점찾기
-            price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
-            vwap_high2_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="low", volume_base="volume")
-            vwap_high2_dataframe = vwap_high2_dataframe.reset_index()
+            with col1:
+                detected_dates = get_detected_dates(year_from=2024, month_from=6, day_from=1)
+                selected_idt = st.selectbox(label="탐지일 선택", options=detected_dates, key="d_dates")
 
-            #st.text(price_pvdt_df)
-            #print(pvdt_string_datetime, i10dt_string_datetime, price_high_index)
+            with col2:
+                if selected_idt:
+                    success, stocknames, stocklist_df = get_detected_stocks(idt = selected_idt)
+                    if success:
+                        selected_stockname = st.selectbox('주식종목 선택', stocknames, key="stock", on_change=on_change_stock)
+                        if selected_stockname:
+                            stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'code']].values
+                            stock_code = stock[0][1]+"."+stock[0][0]
+                            stock_code_only = stock[0][1]
+                            stock_name = selected_stockname
+                            stock = stocklist_df.loc[stocklist_df['name'] == selected_stockname, ['market', 'idt', 'i10dt', 'vdt', 'pattern']].values
+                            market, idt, i10dt, vdt, pattern = stock[0][0], stock[0][1], stock[0][2], stock[0][3], stock[0][4]
+                            i10dt = None
 
-            # vwap_highest_dataframe 장대양봉일(i10dt) 이후 최고점
-            i10dt_string_datetime = datetime.strptime(i10dt, "%Y%m%d")
-            i10dt_string_datetime = i10dt_string_datetime.replace(hour=0, minute=0, second=0)
-            i10dt_string_datetime = i10dt_string_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            price_pvdt_df = tvdata.loc[tvdata.index >= i10dt_string_datetime].copy()
-            price_high_index = price_pvdt_df['high'].idxmax() # 고점찾기
-            price_pvdt_df = tvdata.loc[tvdata.index >= price_high_index].copy() # 고점이후 데이터 
-            vwap_highest_dataframe = calculate_vwap_only(df=price_pvdt_df, vwap_name="vwap", price_base="low", volume_base="volume")
-            vwap_highest_dataframe = vwap_highest_dataframe.reset_index()
+            with col3:
+                col31, col32 = st.columns(2)
+                if selected_stockname:
+                    with col31:
+                        ema_A_length = 5 if col31.toggle(label="5 MA", key="emaA", value=emaA, on_change=on_change_emaA) else 0
+                        ema_B_length = 10 if col31.toggle(label="10 MA", key="emaB", value=emaB, on_change=on_change_emaB) else 0
+                        pass
+                    with col32:
+                        ema_C_length = 60 if col32.toggle(label="60 MA", key="emaC", value=emaC, on_change=on_change_emaC) else 0            
+                        ema_D_length = 381 if col32.toggle(label="381 MA", key="emaD", value=emaD, on_change=on_change_emaD) else 0
+            with col4:
+                col41, col42 = st.columns(2)
+                with col41:
+                    #dt = datetime.strptime(vdt, "%Y%m%d")
+                    #string_date = dt.strftime('%Y-%m-%d')
+                    if pattern:
+                        st.text_input('조검검색', value=pattern, disabled=True, key="valley_date")
+                with col42:
+                    if vdt:
+                        dt = datetime.strptime(vdt, "%Y%m%d%H%M%S")
+                        string_date = dt.strftime('%Y-%m-%d %H:%M')
+                        st.text_input('직전밸리', value=string_date, disabled=True, key="increase10_date")
+            with col5:
+                col51, col52 = st.columns(2)
+                with col51:
+                    if idt:
+                        dt = datetime.strptime(idt, "%Y%m%d")
+                        string_date = dt.strftime('%Y-%m-%d')
+                        st.text_input('탐지일', value=string_date, disabled=True, key="detected_date")
+            with col6:
+                col61, col62 = st.columns(2)
+                with col61:
+                    if vdt:
+                        vdt_date = pytz.timezone('Asia/Seoul').localize(datetime.strptime(vdt[:8], "%Y%m%d"))
+                        today = datetime.now(pytz.timezone('Asia/Seoul'))
+                        vdt_one_week_ago = vdt_date - timedelta(days=0)
+                        days_difference = (today - vdt_one_week_ago).days
+                        selected_minutes = st.selectbox('분봉 선택', index=0, options=['1분','3분','5분','15분','30분','1시간','1일'], key="minutes")
+                        if selected_minutes:
+                            if selected_minutes == '1분':
+                                data_count = days_difference * 450  # 1분봉 기준 1시간: 60개, 7.5시간: 450
+                                interval = Interval.in_1_minute
+                            elif selected_minutes == '3분':
+                                data_count = days_difference * 150  # 3분봉 기준 1시간: 20개, 7.5시간: 150
+                                interval = Interval.in_3_minute
+                            elif selected_minutes == '5분':
+                                data_count = days_difference * 90 + 10 * 90 # 5분봉 기준 1시간: 12개, 7.5시간: 90
+                                interval = Interval.in_5_minute
+                            elif selected_minutes == '15분':
+                                data_count = days_difference * 30 + 4 * 30 # 15분봉 기준 1시간: 4개, 7.5시간: 30
+                                interval = Interval.in_15_minute
+                            elif selected_minutes == '30분':
+                                data_count = days_difference * 15 + 10 * 15  # 30분봉 기준 1시간: 2개, 7.5시간: 15
+                                interval = Interval.in_30_minute
+                            elif selected_minutes == '1시간':
+                                data_count = days_difference * 8 + 6 * 8 # 1시간 기준 1시간: 1개, 7.5시간: 8
+                                interval = Interval.in_1_hour
+                            elif selected_minutes == '1일':
+                                data_count = days_difference + 50  # 1일 기준, 1개
+                                interval = Interval.in_daily
+                with col62:
+                    if selected_stockname:
+                        dummy_ma = 0 if col62.toggle(label="00 BB", key="DM", disabled=True, label_visibility="hidden") else 0
+                        bollinger_ma = 33 if col62.toggle(label="33 BB", key="BB", value=BB, on_change=on_change_BB) else 0
+                        if interval == Interval.in_1_minute:
+                            bollinger_ma = int(bollinger_ma * 5 / 1)
+                        elif interval == Interval.in_3_minute:
+                            bollinger_ma = int(bollinger_ma * 5 / 3)
+                        elif interval == Interval.in_5_minute:
+                            bollinger_ma = int(bollinger_ma * 5 / 5)
+                        elif interval == Interval.in_15_minute:
+                            bollinger_ma = int(bollinger_ma * 5 / 15)
+                        elif interval == Interval.in_30_minute:
+                            if bollinger_ma > 0:
+                                bollinger_ma = 20
+                        elif interval == Interval.in_1_hour:
+                            if bollinger_ma > 0:
+                                bollinger_ma = 10
+                        elif interval == Interval.in_daily:
+                            if bollinger_ma > 0:
+                                bollinger_ma = 5
 
-            #print(pvdt_string_datetime, i10dt_string_datetime, price_high_index)
-            #print(vwap_high2_dataframe)
 
+            if data_count is None:
+                return
+            
+            # for index, row in stocklist_df.iterrows():
 
-        # Save, Load button
-        with col6:
-            col61, col62 = st.columns(2)
- 
-        show_volume = False
-        next_biz_day = get_next_business_day(selected_idt)        
-        today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
-        current_locale = locale.getdefaultlocale()
-        if current_locale[0] != "ko_KR":
-            today = datetime.now().strftime("%Y%m%d")
-        if next_biz_day > today:
-            next_biz_day = selected_idt
-        click_events_dy = chart.get_stock_chart(  symbol=stock_code
-                                                , selected_idt = selected_idt
-                                                , next_biz_day = next_biz_day
-                                                , dataframe=tvdata
-                                                , vwap_dataframe=vwap_df
-                                                , vwap_band_gap = band_gap
-                                                , vwap_high1_dataframe = None
-                                                , vwap_high2_dataframe = vwap_high2_dataframe
-                                                , vwap_highest_dataframe = vwap_highest_dataframe
-                                                , vwap_1day_dataframe = vwap_1day_df
-                                                , bollinger_dataframe=bollinger_df
-                                                , indicators_params=indicators_params
-                                                , pane_name="pane_daily"
-                                                , time_minspacing=3
-                                                , show_volume=show_volume
-                                                , chart_height=650)        
+            #     market, idt, i10dt, vdt, pattern = row['market'], row['idt'], row['i10dt'], row['vdt'], row['pattern']
+            #     stock_code_only = row['code']
+            #     stock_name = row['name']
+
+            # 체크박스와 날짜선택박스 변수 초기화
+            vwap_param = {}
+
+            #df = yf.fetch_stock_data(symbol=stock_code, period="10d", interval="5m")
+            #df.index.name = "Date"
+
+            # 1. Tradingview 에서 과거 분봉데이터 가져오기
+            vwap_df = pd.DataFrame()
+            bollinger_df = pd.DataFrame()
+            tvdata = tv.get_tvdata(stock_code=stock_code_only, stock_name=stock_name, data_count=data_count, interval=interval)
+            if tvdata is not None and not tvdata.empty:
+
+                # datatime 형식을 string 형식으로 변환
+                tvdata = tvdata.reset_index()
+                tvdata['time'] = tvdata['datetime'].dt.strftime('%Y%m%d%H%M%S')
+                tvdata.set_index('time', inplace=True)
+                tvdata.sort_index()
+                tvdata['symbol'] = tvdata['symbol'].apply(lambda x: x.split(':')[1])  # symbol 값 KRX:329180 형식
+
+                today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
+                valley_string_datetime = today + "000000"
+                current_locale = locale.getlocale()
+                if current_locale[0] != "ko_KR":
+                    valley_string_datetime = today + "090000"
+
+                price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
+
+                # 2. vwap 계산 후 return
+                success, df, band_gap = anchored_vwap_to_database(price_df=price_df, stock_code=stock_code_only, stock_name=stock_name, price_base="close", anchor_string_datetime=vdt,
+                                                                multiplier1=multiplier1, multiplier2=multiplier2, multiplier3=multiplier3, multiplier4=multiplier4)
+                if success:
+                    df.drop(columns=['symbol'], inplace=True)
+                    df.reset_index(inplace=True)
+                    del df['time']
+                    df.rename(columns={'datetime':'time'}, inplace=True)
+                    df['time'] = df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
+                    df.set_index('time', inplace=True)
+                    vwap_df = df
+
+                    with col52:
+                        st.text_input('밴드갭', value=f"{band_gap}%", disabled=True, key="band_gap")
+
+                # 3. Bollinger band 계산 후 return
+                success, bollinger_df = calculate_bollinger_bands(price_df=price_df, window=bollinger_ma, multiplier2=multiplier2, multiplier4=multiplier4)
+                if success:
+                    bollinger_df.drop(columns=['symbol'], inplace=True)
+                    bollinger_df.reset_index(inplace=True)
+                    del bollinger_df['time']
+                    bollinger_df.rename(columns={'datetime':'time'}, inplace=True)
+                    bollinger_df['time'] = bollinger_df['time'].dt.strftime('%Y-%m-%d  %H:%M:%S')
+                    bollinger_df.set_index('time', inplace=True)
+                    #print(bollinger_df)
+
+                tvdata.drop(columns=['symbol'], inplace=True)
+                tvdata.reset_index(inplace=True)
+                del tvdata['time']
+                tvdata.rename(columns={'datetime':'time'}, inplace=True)
+                tvdata['time'] = tvdata['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                tvdata.set_index('time', inplace=True)
+
+            len_df = len(tvdata)
+            if len_df <= ema_A_length: ema_A_length = 0
+            if len_df <= ema_B_length: ema_B_length = 0
+            if len_df <= ema_C_length: ema_C_length = 0
+            if len_df <= ema_D_length: ema_D_length = 0
+            if len_df <= bollinger_ma: bollinger_ma = 0
+            
+            ema_param = {}
+            if ema_A_length > 0:
+                ema_param.update({'EMA_A': {'length': ema_A_length, 'color': 'orange', 'linewidth': 2}})
+            if ema_B_length > 0:
+                #ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'mediumblue', 'linewidth': 2}})
+                ema_param.update({'EMA_B': {'length': ema_B_length, 'color': 'orange', 'linewidth': 2}})
+            if ema_C_length > 0:
+                ema_param.update({'EMA_C': {'length': ema_C_length, 'color': 'red', 'linewidth': 2}})
+            if ema_D_length > 0:
+                ema_param.update({'EMA_D': {'length': ema_D_length, 'color': 'crimson', 'linewidth': 2}})
+
+            indicators_params = {'ema': ema_param, 'vwap': vwap_param}
+
+            # 직전저점 vwap
+            vwap_1day_df = pd.DataFrame()
+            #previous_vdt, price_1day_df = zz.get_previous_valley_datetime(stock_code=stock_code_only, stock_name=stock_name, vdt=vdt, base_price="close", days_before=5)
+            previous_vdt = vdt
+
+            # 직전저점(previous_vdt)과 저점(vdt)사이의 고점
+            vwap_high2_dataframe = pd.DataFrame()
+
+            # 장대양봉일부터 최고점
+            vwap_highest_dataframe = pd.DataFrame()
+
+            # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
+            if previous_vdt:
+
+                pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
+                price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=False)
+
+                price_pvdt_df = price_1day_df.loc[price_1day_df.index >= previous_vdt].copy()
+                price_pvdt_df = price_pvdt_df.reset_index()
+                price_pvdt_df['time'] = price_pvdt_df['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                price_pvdt_df.set_index('time', inplace=True)
+                #price_pvdt_df = pd.concat([price_pvdt_df, price_idt_df])
+
+                vwap_1day_df = calculate_vwap_bands(df=price_pvdt_df, anchor_base="min", anchor_date=previous_vdt, price_base="close", volume_base='volume', vwap_name="vwap", multiplier1=multiplier2, multiplier2=multiplier4)
+                # Data index 를 time 으로 변경, 그래프 생성시 time, vwap 으로 생성, time 컬럼의 형식을 문자열로 변환, 그래프 생성시 time 컬럼의 문자열을 timestamp 로 변경
+                vwap_1day_df = vwap_1day_df.reset_index()
+                #vwap_1day_df = vwap_1day_df.rename(columns={'Date': 'time'})
+
+            # Save, Load button
+            with col6:
+                col61, col62 = st.columns(2)
+    
+            show_volume = False
+            next_biz_day = get_next_business_day(selected_idt)        
+            today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
+            current_locale = locale.getlocale()
+            if current_locale[0] != "ko_KR":
+                today = datetime.now().strftime("%Y%m%d")
+            if next_biz_day > today:
+                next_biz_day = selected_idt
+            click_events_dy = chart.get_stock_chart(  symbol=stock_code
+                                                    , selected_idt = selected_idt
+                                                    , next_biz_day = next_biz_day
+                                                    , dataframe=tvdata
+                                                    , vwap_dataframe=vwap_df
+                                                    , vwap_band_gap = band_gap
+                                                    , vwap_high1_dataframe = None
+                                                    , vwap_high2_dataframe = vwap_high2_dataframe
+                                                    , vwap_highest_dataframe = vwap_highest_dataframe
+                                                    , vwap_1day_dataframe = vwap_1day_df
+                                                    , bollinger_dataframe=bollinger_df
+                                                    , indicators_params=indicators_params
+                                                    , pane_name="pane_daily"
+                                                    , time_minspacing=3
+                                                    , show_volume=show_volume
+                                                    , chart_height=650)        
+    except Exception as e:
+        st.info(str(e))
         
 if __name__ == '__main__':
     main()
