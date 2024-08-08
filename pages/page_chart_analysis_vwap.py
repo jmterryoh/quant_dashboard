@@ -638,10 +638,10 @@ def main():
                 tvdata['symbol'] = tvdata['symbol'].apply(lambda x: x.split(':')[1])  # symbol 값 KRX:329180 형식
 
                 today = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y%m%d")
-                valley_string_datetime = today + "000000"
+                valley_string_datetime = today + "090000"
                 current_locale = locale.getlocale()
                 if current_locale[0] != "ko_KR":
-                    valley_string_datetime = today + "090000"
+                    valley_string_datetime = today + "000000"
 
                 price_df = tvdata.loc[tvdata.index >= valley_string_datetime].copy()
 
@@ -756,6 +756,6 @@ def main():
                                                     , chart_height=650)        
     except Exception as e:
         st.info(str(e))
-        
+
 if __name__ == '__main__':
     main()
