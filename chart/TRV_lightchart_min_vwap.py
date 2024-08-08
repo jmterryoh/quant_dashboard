@@ -13,8 +13,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from util import zigzag as zz
-from util import vwapchain as vwc
-
+#from util import vwapchain as vwc
 
 #COLOR_BULL = 'rgba(38,166,154,0.9)' # #26a69a
 #COLOR_BEAR = 'rgba(239,83,80,0.9)'  # #ef5350
@@ -181,11 +180,12 @@ def get_stock_chart(symbol
                 seriesMultipaneChart.append(get_series_line_string(title=f"EMA_{ema_length}", data=ema_data, color=ema_color, linewidth=ema_linewidth, pane=0))
 
     
-    # 기본 매수시점 확인
     # Initial zigzag data and latest valley detection
     gap = 0.01
     zigzag_data = get_zigzag_data(dataframe, gap)
 
+    """
+    # 기본 매수시점 확인
     # Get the current locale setting
     base_datetime = ""
     open_datetime = ""
@@ -239,6 +239,7 @@ def get_stock_chart(symbol
 
     # else:
     #     st.text(f"일자:{next_biz_day} 매수시점 없음")
+    """
     
 
     """
@@ -310,7 +311,7 @@ def get_stock_chart(symbol
         # 상향돌파
         if first_above_vwap_time:
             first_above_vwap_time_str = first_above_vwap_time.strftime("%H%M%S")
-            if not first_buy and first_above_vwap_time_str >= '090400' and first_above_vwap_time_str <= '140000':
+            if not first_buy and first_above_vwap_time_str > '090400' and first_above_vwap_time_str <= '140000':
                 valley_datetime_old = first_above_vwap_time
                 valley_value = first_above_vwap_price
                 textout = f"{incremented_datetime} 일자:{next_biz_day} 매수:{first_above_vwap_time} {valley_value} 상향돌파"
@@ -323,7 +324,7 @@ def get_stock_chart(symbol
                 try:
 
                     if len(vwap_support_points) > 0:
-                        filter_datetime_str = get_datetime_str(next_biz_day, "09:01:00")
+                        filter_datetime_str = get_datetime_str(next_biz_day, "09:04:00")
                         vwap_support_points = vwap_support_points[vwap_support_points['valley_time'] > filter_datetime_str]
 
                         if len(vwap_support_points) > 0:
