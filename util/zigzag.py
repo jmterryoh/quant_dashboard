@@ -162,90 +162,6 @@ def get_previous_valley_datetime(stock_code, stock_name, vdt, base_price="close"
 
     return None, None
 
-# 연속된 pivot 값을 그룹화하고 처리할 함수
-def process_continuous_pivots(df, pivot_type, keep='min'):
-    indices_to_remove = []
-    current_group = []
-
-    for idx, row in df.iterrows():
-        if row['pivot'] == pivot_type:
-            current_group.append(idx)
-        else:
-            if len(current_group) > 1:
-                if keep == 'min':
-                    min_idx = df.loc[current_group, 'value'].idxmin()
-                    current_group.remove(min_idx)
-                elif keep == 'max':
-                    max_idx = df.loc[current_group, 'value'].idxmax()
-                    current_group.remove(max_idx)
-                indices_to_remove.extend(current_group)
-            current_group = []
-
-    # 마지막 그룹 처리
-    if len(current_group) > 1:
-        if keep == 'min':
-            min_idx = df.loc[current_group, 'value'].idxmin()
-            current_group.remove(min_idx)
-        elif keep == 'max':
-            max_idx = df.loc[current_group, 'value'].idxmax()
-            current_group.remove(max_idx)
-        indices_to_remove.extend(current_group)
-    
-    return indices_to_remove
-
-def simplify_zigzag(df, gap=1.0):
-
-    # percentage to float
-    gap = gap / 100
-
-    # 인덱스를 초기화하여 순회하기 쉽게 변경하고, 원래 인덱스를 저장
-    df = df.reset_index().rename(columns={'index': 'original_index'})
-
-    # 제거할 인덱스를 저장할 리스트
-    remove_indices = []
-
-    # 순회하면서 조건에 맞는 인덱스를 수집
-    i = 0
-    while i < len(df) - 3:
-        if df.loc[i, 'pivot'] == 'peak' and df.loc[i + 1, 'pivot'] == 'valley' and df.loc[i + 2, 'pivot'] == 'peak' and df.loc[i + 3, 'pivot'] == 'valley':
-            if abs(df.loc[i + 1, 'value'] - df.loc[i + 2, 'value']) / df.loc[i + 1, 'value'] <= gap:
-                # valley가 낮아지는 경우, 중간 peak와 valley 삭제
-                if df.loc[i + 1, 'value'] >= df.loc[i + 3, 'value']:
-                    remove_indices.append(i + 1)
-                    remove_indices.append(i + 2)
-                    i += 4
-                # valley가 높아지는 경우, 중간 peak와 마지막 valley 삭제
-                elif df.loc[i + 1, 'value'] < df.loc[i + 3, 'value']:
-                    remove_indices.append(i + 2)
-                    remove_indices.append(i + 3)
-                    i += 4
-                else:
-                    i += 1
-            else:
-                i += 1
-        elif df.loc[i, 'pivot'] == 'valley' and df.loc[i + 1, 'pivot'] == 'peak' and df.loc[i + 2, 'pivot'] == 'valley' and df.loc[i + 3, 'pivot'] == 'peak':
-            if abs(df.loc[i + 1, 'value'] - df.loc[i + 2, 'value']) / df.loc[i + 1, 'value'] <= gap:
-                # peak가 높아지는 경우, 중간 peak와 valley 삭제
-                if df.loc[i + 1, 'value'] <= df.loc[i + 3, 'value']:
-                    remove_indices.append(i + 1)
-                    remove_indices.append(i + 2)
-                    i += 4
-                # peak가 낮아지는 경우, 중간 valley와 마지막 peak 삭제
-                elif df.loc[i + 1, 'value'] > df.loc[i + 3, 'value']:
-                    remove_indices.append(i + 2)
-                    remove_indices.append(i + 3)
-                    i += 4
-                else:
-                    i += 1
-            else:
-                i += 1
-        else:
-            i += 1
-
-    # 제거할 인덱스를 DataFrame에서 drop하고 원래 인덱스를 복원
-    df_cleaned = df.drop(remove_indices).sort_values(by='original_index').set_index('original_index').reset_index(drop=True)
-
-    return df_cleaned
 
 def calculate_zigzag_threshold(base_prices, threshold=0.01, delay=1):
     pivot_points = []
@@ -312,6 +228,56 @@ def get_zigzag_threshold(df, base_price="Close", threshold=0.01, delay=1):
         zigzag_lines_data.append({"time": dates[-1], "value": df.iloc[-1][f"{base_price}"], "pivot": "last"})
 
     return pd.DataFrame(zigzag_lines_data)
+
+
+# 가장 최근의 zigzag 피크와 밸리 찾기
+def find_recent_zigzag_points(zigzag_df, start_time, end_time, prior_points_count=2):
+    start_time = pd.to_datetime(start_time)
+    end_time = pd.to_datetime(end_time)
+    zigzag_df['time'] = pd.to_datetime(zigzag_df['time'])
+
+    # Find the specified number of Zig-Zag points immediately before the start time
+    prior_points = zigzag_df[(zigzag_df['time'] <= start_time) & (zigzag_df['pivot'] != 'last')].tail(prior_points_count)
+
+    # Find the Zig-Zag points within the specified time range
+    recent_points = zigzag_df[(zigzag_df['time'] > start_time) & (zigzag_df['time'] <= end_time)]
+    
+    # Combine the prior points and recent points
+    combined_points = pd.concat([prior_points, recent_points]).reset_index(drop=True)
+
+    return combined_points    
+
+
+# zigzag로 Stage 1 ~ Stage 4 단계 단순판단 함수
+def determine_market_phase(recent_zigzag_points):
+    if recent_zigzag_points.empty:
+        return "Not enough data"
+
+    recent_zigzag_points = recent_zigzag_points.sort_values(by='time')
+    
+    if len(recent_zigzag_points) < 6:
+        return "Not enough zigzag points"
+
+    last_points = recent_zigzag_points.iloc[-6:]
+
+    # Consolidation 판단
+    price_range = last_points['value'].max() - last_points['value'].min()
+    if price_range / last_points['value'].mean() < 0.05:  # 5% 범위 내에서 횡보하면 Consolidation으로 판단
+        return "Consolidation"
+
+    # 최근 6개의 포인트 분석
+    if all(last_points.iloc[i]['pivot'] == 'valley' for i in [0, 2, 4]) and all(last_points.iloc[i]['pivot'] == 'peak' for i in [1, 3, 5]):
+        if last_points.iloc[4]['value'] > last_points.iloc[0]['value'] and last_points.iloc[5]['value'] > last_points.iloc[1]['value']:
+            return "Accumulation"
+        else:
+            return "Decline"
+    elif all(last_points.iloc[i]['pivot'] == 'peak' for i in [0, 2, 4]) and all(last_points.iloc[i]['pivot'] == 'valley' for i in [1, 3, 5]):
+        if last_points.iloc[4]['value'] > last_points.iloc[0]['value'] and last_points.iloc[5]['value'] > last_points.iloc[1]['value']:
+            return "Markup"
+        else:
+            return "Distribution"
+    else:
+        return "Not enough data"
 
 
 def backtest_zigzag(df, base_price="Close", threshold=0.01, delay_values=range(1, 20)):
