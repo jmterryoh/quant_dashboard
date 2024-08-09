@@ -712,6 +712,11 @@ def main():
             # previous_vdt 와 vdt 가 동일할 경우에는 일봉기준 vwap 을 사용하지 않고 분봉 vwap 을 사용
             if previous_vdt:
 
+                # UTC로 변환
+                if current_locale[0] != "ko_KR":
+                    dt_utc = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+                    previous_vdt = dt_utc.strftime("%Y%m%d%H%M%S")
+
                 pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
                 price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=2)
 
