@@ -716,6 +716,7 @@ def main():
                 if current_locale[0] != "ko_KR":
                     dt_utc = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
                     previous_vdt = dt_utc.strftime("%Y%m%d%H%M%S")
+                    st.info(previous_vdt)
 
                 pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
                 price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=2)
