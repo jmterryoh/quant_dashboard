@@ -714,9 +714,9 @@ def main():
 
                 # UTC로 변환
                 if current_locale[0] != "ko_KR":
-                    st.info(previous_vdt)
-                    dt_utc = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-                    previous_vdt = dt_utc.strftime("%Y%m%d%H%M%S")
+                    pvdt_temp = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S")
+                    new_time = pvdt_temp - timedelta(hours=9)
+                    previous_vdt = new_time.strftime("%Y%m%d%H%M%S")
                     st.info(previous_vdt)
 
                 pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
