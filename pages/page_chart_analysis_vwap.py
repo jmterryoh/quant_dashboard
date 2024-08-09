@@ -717,7 +717,6 @@ def main():
                     pvdt_temp = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S")
                     new_time = pvdt_temp - timedelta(hours=9)
                     previous_vdt = new_time.strftime("%Y%m%d%H%M%S")
-                    st.info(previous_vdt)
 
                 pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
                 price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=2)
