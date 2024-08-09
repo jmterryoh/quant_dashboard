@@ -11,7 +11,7 @@ from util import session as ss
 from util import screen as sc
 from util import zigzag as zz
 from pages import sidebar as sb
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from chart import TRV_lightchart_min_vwap as chart
 from hts import YF_api as yf
 from hts import TV_rest_api as tv
