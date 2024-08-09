@@ -713,7 +713,7 @@ def main():
             if previous_vdt:
 
                 pvdt = datetime.strptime(previous_vdt, "%Y%m%d%H%M%S").strftime("%Y%m%d")
-                price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=False)
+                price_1day_df = get_tvdata_from_vdt(stock_code=stock_code_only, stock_name=stock_name, selected_minutes=selected_minutes, vdt=pvdt, days_more=2)
 
                 price_pvdt_df = price_1day_df.loc[price_1day_df.index >= previous_vdt].copy()
                 price_pvdt_df = price_pvdt_df.reset_index()
